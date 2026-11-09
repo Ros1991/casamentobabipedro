@@ -128,7 +128,7 @@ export function Enter() {
 
   return (
     <div className="min-h-dvh bg-cream">
-      <div className="hero-photo flex min-h-[340px] flex-col justify-end px-6 pb-10 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 28px)' }}>
+      <div className="hero-photo flex min-h-[360px] flex-col justify-end px-6 pb-16 text-center" style={{ paddingTop: 'calc(var(--safe-top) + 28px)' }}>
         <h1 className="font-script text-5xl drop-shadow">Galera do casamento</h1>
         <p className="mt-2 font-serif text-2xl font-semibold tracking-wide">{wedding.couple}</p>
         <p className="mt-1 text-sm font-semibold tracking-widest text-white/90 uppercase">
