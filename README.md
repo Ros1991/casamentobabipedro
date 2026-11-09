@@ -47,7 +47,7 @@ npm run icons          # regenera os ícones do PWA a partir de client/public/mo
 
 O projeto já está no ar: **projeto `galera-babi-pedro`**, serviço **`galera`**, ligado ao repositório `Ros1991/casamentobabipedro` (branch `main`). **Todo push na `main` faz deploy automaticamente.**
 
-- URL: <__PUBLIC_URL__>
+- URL: <https://galera-production-e5fd.up.railway.app>
 - Região `us-east4` (Virgínia, a de menor latência para o Brasil entre as disponíveis).
 - Volume `galera-data` montado em `/data` (banco `galera.db` + `uploads/`).
 - Variáveis cadastradas no serviço (ver tabela acima). Troque `INVITE_CODE`, `ADMIN_PHONES` e `TELAO_CODE` pelos valores definitivos no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.

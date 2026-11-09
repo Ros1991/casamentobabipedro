@@ -23,7 +23,7 @@ export default defineRailway(() => {
       NODE_ENV: "production",
       DATA_DIR: "/data",
       MAX_UPLOAD_MB: "12",
-      PUBLIC_URL: "__PUBLIC_URL__",
+      PUBLIC_URL: "https://galera-production-e5fd.up.railway.app",
       // Segredos e códigos ficam só no Railway (Variables), nunca no repositório
       SESSION_SECRET: preserve(),
       INVITE_CODE: preserve(),
