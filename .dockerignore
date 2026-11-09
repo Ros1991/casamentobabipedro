@@ -1,0 +1,11 @@
+node_modules
+*/node_modules
+data
+.env
+.git
+.github
+dist
+*/dist
+*.log
+PLANO.md
+README.md

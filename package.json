@@ -1,0 +1,25 @@
+{
+  "name": "galera-do-casamento",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Rede social do casamento Pedro & Babi",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c green,blue \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client && npm run build -w server",
+    "start": "npm run start -w server",
+    "db:generate": "npm run db:generate -w server",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "railway": "^3.16.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

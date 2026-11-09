@@ -1,0 +1,212 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+
+@theme {
+  --color-cream: #fbf8f2;
+  --color-cream-dark: #f1ebe0;
+  --color-sand: #e3d9c8;
+  --color-terra: #a47764;
+  --color-terra-dark: #7c5546;
+  --color-terra-light: #c9a692;
+  --color-terra-pale: #f3e7df;
+  --color-sea: #cfe0e6;
+  --color-sea-light: #e9f1f4;
+  --color-ink: #3d3733;
+  --color-ink-soft: #7d736d;
+  --color-rose: #c0665a;
+  --color-gold: #c09853;
+
+  --font-sans: 'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --font-script: 'Dancing Script', 'Brush Script MT', cursive;
+
+  --shadow-soft: 0 6px 24px -8px rgb(124 85 70 / 0.2);
+}
+
+:root {
+  color-scheme: light;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Fundo claro de areia e céu, no clima de praia do site oficial */
+.sand-gradient {
+  background-color: var(--color-cream);
+  background-image: linear-gradient(180deg, var(--color-sea-light) 0%, var(--color-cream) 100%);
+}
+
+/* Cabeçalho com a foto oficial (coqueiros na praia, com o monograma P/B) e texto claro por cima */
+.hero-photo {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-terra-dark) url('/img/hero.webp') center 38% / cover no-repeat;
+  color: #fff;
+}
+.hero-photo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.1) 0%, rgb(0 0 0 / 0.08) 40%, rgb(40 25 18 / 0.72) 100%);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Pinos do mapa */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: #edf0ee;
+  /* Mantém os z-index internos do Leaflet (até 1000) dentro do mapa,
+     para painéis e modais do app ficarem por cima */
+  isolation: isolate;
+}
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+/* Sem anel de foco após toque/clique no pino (mantém para navegação por teclado) */
+.leaflet-marker-icon:focus:not(:focus-visible) {
+  outline: none;
+}
+/* O Leaflet dá largura 0 ao elemento do marcador: o pino precisa se dimensionar pelo conteúdo */
+.pin-place {
+  position: relative;
+  display: inline-flex;
+  width: max-content;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: var(--color-terra-dark);
+  color: var(--color-cream);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.3);
+  border: 2px solid var(--color-cream);
+  transform: translate(-50%, calc(-100% - 6px));
+}
+.pin-place.pin-compact {
+  padding: 5px 7px;
+  gap: 3px;
+}
+.pin-place svg {
+  flex: none;
+}
+.pin-place::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border-right: 2px solid var(--color-cream);
+  border-bottom: 2px solid var(--color-cream);
+  transform: translateX(-50%) rotate(45deg);
+}
+.pin-place.pin-venue {
+  background: var(--color-gold);
+}
+.pin-place.pin-custom {
+  background: var(--color-terra);
+}
+.pin-place .pin-count {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-cream);
+  color: var(--color-terra-dark);
+  font-size: 11px;
+}
+.pin-photo {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 3px solid var(--color-cream);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.3);
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+  background: var(--color-sand);
+}
+.pin-pick {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-rose);
+  border: 3px solid var(--color-cream);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  transform: translate(-50%, -50%);
+}
+.cluster-photos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--color-cream);
+  border: 3px solid var(--color-terra);
+  color: var(--color-terra-dark);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.25);
+  transform: translate(-50%, -50%);
+}
+
+/* Esconde barras de rolagem em faixas horizontais */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+.animate-kenburns {
+  animation: kenburns 12s ease-in-out both;
+}

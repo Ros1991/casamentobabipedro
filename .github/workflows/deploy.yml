@@ -1,0 +1,82 @@
+# CI + deploy no Railway
+#
+# Em todo push na main (e em pull requests) o job "build" instala e compila o projeto.
+# Se o repositório tiver o secret RAILWAY_TOKEN, o job "deploy" publica no Railway via CLI.
+#
+# Como configurar (uma vez):
+#   1. No Railway: projeto → Settings → Tokens → "Create token" (token de PROJETO, ambiente production).
+#   2. No GitHub: repositório → Settings → Secrets and variables → Actions:
+#        - Secret   RAILWAY_TOKEN   = o token criado acima
+#        - Variable RAILWAY_SERVICE = nome do serviço no Railway (ex.: galera)
+#
+# Alternativa sem token: conectar o repositório direto no Railway (Service → Settings → Source).
+# Nesse caso o Railway já faz deploy a cada push e este workflow serve só como verificação de build.
+
+name: CI e deploy no Railway
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Instalar e compilar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Compilar client e server
+        run: npm run build
+
+  deploy:
+    name: Deploy no Railway
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar se o token do Railway está configurado
+        id: check
+        run: |
+          if [ -n "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::RAILWAY_TOKEN não configurado. Pulando deploy via CLI (use a integração GitHub do Railway ou cadastre o secret)."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.has_token == 'true'
+        with:
+          node-version: 22
+
+      - name: Instalar Railway CLI
+        if: steps.check.outputs.has_token == 'true'
+        run: npm install -g @railway/cli
+
+      - name: Publicar no Railway
+        if: steps.check.outputs.has_token == 'true'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
+        run: |
+          if [ -n "$RAILWAY_SERVICE" ]; then
+            railway up --service "$RAILWAY_SERVICE" --detach
+          else
+            railway up --detach
+          fi
