@@ -76,7 +76,8 @@ export function EventForm({ open, onClose, editing }: Props) {
     }
   };
 
-  const center: [number, number] = [-9.834, -35.886];
+  // Aquiraz Riviera (onde fica a festa e a maior parte das hospedagens)
+  const center: [number, number] = [-3.923, -38.328];
 
   return (
     <BottomSheet open={open} onClose={onClose} title={editing ? 'Editar combinado' : 'Novo combinado'} maxHeight="max-h-[92dvh]">

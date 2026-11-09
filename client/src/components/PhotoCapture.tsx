@@ -142,7 +142,7 @@ export function PhotoCapture({ variant = 'fab', label = 'Tirar foto', className 
 
   const mapCenter: [number, number] = config
     ? [config.wedding.mapCenter.lat, config.wedding.mapCenter.lng]
-    : [-9.77, -35.79];
+    : [-3.923, -38.328];
 
   const trigger = (() => {
     if (variant === 'fab') {
