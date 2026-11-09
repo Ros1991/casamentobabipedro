@@ -40,7 +40,8 @@ export function Chegadas() {
     for (let i = 0; i <= span; i++) {
       const date = addDays(start, i);
       const present = withDates.filter((g) => {
-        const a = g.arrivalDate ?? g.departureDate!;
+        // Só a saída informada: conta como presente do dia da festa (ou da saída, se for antes) até ir embora
+        const a = g.arrivalDate ?? (g.departureDate! < WEDDING_DAY ? g.departureDate! : WEDDING_DAY);
         const d = g.departureDate ?? (g.arrivalDate! <= WEDDING_DAY ? WEDDING_DAY : g.arrivalDate!);
         return a <= date && date <= d;
       });
@@ -100,7 +101,7 @@ export function Chegadas() {
               })}
             </ul>
             <p className="mt-2 text-[11px] text-ink-soft">
-              Acompanhantes contam junto. Quem não informou a saída conta como presente até o dia da festa.
+              Acompanhantes contam junto. Quem não informou a saída conta como presente até o dia da festa; quem só informou a saída, a partir do dia da festa. Quem não informou nenhuma data não entra nesta conta.
             </p>
           </section>
 
