@@ -114,6 +114,31 @@ export function photoDTO(p: Photo, messageId: number | null): PhotoDTO {
   };
 }
 
+export interface RsvpDTO {
+  guestId: string;
+  status: 'yes' | 'maybe' | 'no' | string;
+  peopleCount: number;
+  note: string | null;
+  updatedAt: number;
+}
+
+export interface EventDTO {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string;
+  time: string | null;
+  placeLabel: string | null;
+  placeLat: number | null;
+  placeLng: number | null;
+  isOfficial: boolean;
+  createdBy: GuestLiteDTO;
+  createdAt: number;
+  updatedAt: number;
+  rsvps: RsvpDTO[];
+  counts: { yes: number; maybe: number; no: number; people: number };
+}
+
 export function accommodationDTO(a: Accommodation) {
   return {
     id: a.id,

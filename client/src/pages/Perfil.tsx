@@ -1,8 +1,10 @@
-import { Camera, LogOut, ShieldCheck, Smartphone, Trash2, Users } from 'lucide-react';
+import { Camera, LogOut, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { CompanionsInput } from '../components/CompanionsInput';
+import { InstallBanner } from '../components/InstallBanner';
+import { NotificationsCard } from '../components/NotificationsCard';
 import { StayPicker } from '../components/StayPicker';
 import { errorMessage } from '../lib/api';
 import { formatPhone } from '../lib/format';
@@ -34,7 +36,6 @@ export function Perfil() {
   const [saving, setSaving] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const [showInstall, setShowInstall] = useState(false);
 
   useEffect(() => {
     if (!me) return;
@@ -182,21 +183,9 @@ export function Perfil() {
         {saving ? 'Salvando…' : 'Salvar alterações'}
       </button>
 
-      <section className="rounded-3xl border border-sand bg-white/60 p-4">
-        <button type="button" onClick={() => setShowInstall((v) => !v)} className="flex w-full items-center gap-2 text-left font-semibold text-terra-dark">
-          <Smartphone size={18} /> Colocar na tela de início do celular
-        </button>
-        {showInstall && (
-          <div className="mt-2 space-y-1 text-sm text-ink-soft animate-fade-in">
-            <p>
-              <strong>iPhone (Safari):</strong> toque em Compartilhar (quadrado com seta) → "Adicionar à Tela de Início".
-            </p>
-            <p>
-              <strong>Android (Chrome):</strong> menu ⋮ → "Adicionar à tela inicial" ou "Instalar app".
-            </p>
-          </div>
-        )}
-      </section>
+      <NotificationsCard />
+
+      <InstallBanner always />
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         {isAdmin ? (

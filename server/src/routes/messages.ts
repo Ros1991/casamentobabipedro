@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { isAdmin, requireGuest } from '../auth.js';
 import { db } from '../db/index.js';
 import { messages, photos, reactions } from '../db/schema.js';
+import { notifyNewMessage } from '../push.js';
 import { loadMessage, loadMessages, loadReactions } from '../queries.js';
 import { broadcast } from '../realtime.js';
 import { str } from '../validate.js';
@@ -33,6 +34,7 @@ export default async function messageRoutes(app: FastifyInstance): Promise<void>
         .run();
       const dto = loadMessage(Number(result.lastInsertRowid))!;
       broadcast('message:new', dto);
+      void notifyNewMessage(dto);
       return { message: dto };
     },
   );

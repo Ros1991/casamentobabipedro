@@ -18,6 +18,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { Countdown } from '../components/Countdown';
+import { EventCard } from '../components/EventCard';
+import { InstallBanner } from '../components/InstallBanner';
+import { NotificationsCard } from '../components/NotificationsCard';
 import { PhotoCapture } from '../components/PhotoCapture';
 import { addDays, countPeople, firstName, formatDateShort, toDateOnly } from '../lib/format';
 import { warmUpLocationPermission } from '../lib/geo';
@@ -38,6 +41,9 @@ export function Home() {
   const loadPhotos = useStore((s) => s.loadPhotos);
   const messagesLoaded = useStore((s) => s.messagesLoaded);
   const loadMessages = useStore((s) => s.loadMessages);
+  const events = useStore((s) => s.events);
+  const eventsLoaded = useStore((s) => s.eventsLoaded);
+  const loadEvents = useStore((s) => s.loadEvents);
   const online = useStore((s) => s.online);
   const [hintDismissed, setHintDismissed] = useState(() => {
     try {
@@ -52,10 +58,20 @@ export function Home() {
     if (!guestsLoaded) void loadGuests().catch(() => undefined);
     if (!photosLoaded) void loadPhotos().catch(() => undefined);
     if (!messagesLoaded) void loadMessages().catch(() => undefined);
-  }, [guestsLoaded, photosLoaded, messagesLoaded, loadGuests, loadPhotos, loadMessages]);
+    if (!eventsLoaded) void loadEvents().catch(() => undefined);
+  }, [guestsLoaded, photosLoaded, messagesLoaded, eventsLoaded, loadGuests, loadPhotos, loadMessages, loadEvents]);
 
   const guestList = useMemo(() => Object.values(guests), [guests]);
   const today = toDateOnly(new Date());
+  const featuredEvents = useMemo(() => {
+    const upcoming = events.filter((e) => e.date >= today);
+    const official = upcoming.filter((e) => e.isOfficial);
+    return (official.length > 0 ? official : upcoming).slice(0, 2);
+  }, [events, today]);
+  const pendingOfficial = useMemo(
+    () => featuredEvents.filter((e) => e.isOfficial && !e.rsvps.some((r) => r.guestId === me?.id)).length,
+    [featuredEvents, me?.id],
+  );
   const tomorrow = addDays(today, 1);
   const arrivingSoon = useMemo(
     () => guestList.filter((g) => g.arrivalDate === today || g.arrivalDate === tomorrow),
@@ -107,6 +123,8 @@ export function Home() {
       </section>
 
       <div className="space-y-4 px-4 pt-4">
+        <InstallBanner />
+        <NotificationsCard dismissable />
         {!hintDismissed && (
           <div className="flex items-start gap-3 rounded-3xl border border-sea bg-sea-light p-4 animate-fade-in">
             <span className="rounded-full bg-cream p-2 text-terra-dark">
@@ -134,6 +152,27 @@ export function Home() {
           </div>
         )}
 
+        {featuredEvents.length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-terra-dark">
+                <CalendarDays size={20} /> {featuredEvents[0].isOfficial ? 'Combinados dos noivos' : 'Próximos combinados'}
+              </h2>
+              <Link to="/agenda" className="text-sm font-semibold text-terra underline">
+                Ver agenda
+              </Link>
+            </div>
+            {pendingOfficial > 0 && (
+              <p className="rounded-2xl bg-rose/10 px-3 py-2 text-sm font-semibold text-rose">
+                Os noivos estão esperando sua resposta: confirme abaixo se você vai.
+              </p>
+            )}
+            {featuredEvents.map((e) => (
+              <EventCard key={e.id} event={e} compact />
+            ))}
+          </section>
+        )}
+
         <div className="grid grid-cols-3 gap-3">
           <Link to="/mapa" className="rounded-3xl border border-sand bg-white/60 p-3 text-center shadow-soft">
             <div className="font-serif text-3xl font-semibold text-terra-dark">{countPeople(guestList)}</div>
@@ -159,13 +198,13 @@ export function Home() {
           <Link to="/mapa" className="flex items-center justify-center gap-2 rounded-2xl border border-terra bg-cream px-4 py-3 font-semibold text-terra-dark shadow-soft">
             <MapPinned size={20} /> Mapa da galera
           </Link>
-          <Link to="/chegadas" className="flex items-center justify-center gap-2 rounded-2xl border border-terra bg-cream px-4 py-3 font-semibold text-terra-dark shadow-soft">
-            <CalendarDays size={20} /> Quem chega quando
+          <Link to="/agenda" className="flex items-center justify-center gap-2 rounded-2xl border border-terra bg-cream px-4 py-3 font-semibold text-terra-dark shadow-soft">
+            <CalendarDays size={20} /> Agenda e chegadas
           </Link>
         </div>
 
         {(arrivingSoon.length > 0 || inTown.length > 0) && (
-          <Link to="/chegadas" className="block rounded-3xl border border-sand bg-white/60 p-4 shadow-soft">
+          <Link to="/agenda?tab=chegadas" className="block rounded-3xl border border-sand bg-white/60 p-4 shadow-soft">
             <div className="flex items-center gap-2 font-serif text-xl font-semibold text-terra-dark">
               <Users size={20} /> Movimento da galera
             </div>

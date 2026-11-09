@@ -14,6 +14,7 @@ import { db } from '../db/index.js';
 import { accommodations, guests } from '../db/schema.js';
 import { accommodationDTO, guestMe, guestPublic } from '../dto.js';
 import { normalizePhone } from '../phone.js';
+import { pushEnabled } from '../push.js';
 import { broadcast } from '../realtime.js';
 import { bool, str } from '../validate.js';
 import { WEDDING } from '../wedding.js';
@@ -26,6 +27,7 @@ export default async function authRoutes(app: FastifyInstance): Promise<void> {
     telaoEnabled: !!config.telaoCode,
     wedding: WEDDING,
     map: { tileUrl: config.mapTileUrl, attribution: config.mapTileAttribution },
+    push: { enabled: pushEnabled, publicKey: pushEnabled ? config.vapidPublicKey : null },
     accommodations: db.select().from(accommodations).orderBy(accommodations.sortOrder).all().map(accommodationDTO),
   }));
 

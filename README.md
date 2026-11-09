@@ -36,12 +36,25 @@ npm run icons          # regenera os ícones do PWA a partir de client/public/mo
 | `PORT` | não | Porta do servidor (o Railway injeta) |
 | `DATA_DIR` | não | Pasta do banco (`galera.db`) e das fotos (`uploads/`). Local: `./data`. Railway: `/data` |
 | `SESSION_SECRET` | **sim em produção** | Frase longa e aleatória que assina os cookies |
-| `INVITE_CODE` | recomendado | Código que os convidados digitam na entrada. Vazio = sem código |
+| `INVITE_CODE` | não | Código que os convidados digitam na entrada. **Está vazio (sem código)** por decisão dos noivos; defina uma palavra para passar a exigir |
 | `ADMIN_PHONES` | recomendado | Telefones (só dígitos, com 55) com acesso ao `/admin`, separados por vírgula |
 | `TELAO_CODE` | recomendado | Código para abrir `/telao` sem login |
 | `MAX_UPLOAD_MB` | não | Limite por foto (padrão 12) |
 | `PUBLIC_URL` | recomendado | URL pública (usada no QR code do telão) |
 | `MAP_TILE_URL` / `MAP_TILE_ATTRIBUTION` | não | Troca o provedor de tiles do mapa (padrão OpenStreetMap) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | para avisos | Chaves do Web Push (avisos de novas mensagens). Sem elas, os avisos ficam desligados |
+
+## Combinados (Agenda)
+
+- Admins criam **combinados dos noivos** (ex.: Jangaday em 21/12): ficam em destaque na Agenda, no Início, no mapa (se tiverem ponto) e no telão, entram como mensagem no mural e disparam aviso no celular de todos que ativaram notificações.
+- Qualquer convidado pode **propor um combinado da galera** (mesmo fluxo, sem o aviso geral).
+- Cada convidado responde **Vou / Talvez / Não vou** e, se tiver acompanhantes, diz quantos da sua turma vão. A lista de quem vai fica em "Ver quem vai"; no `/admin` há a contagem e um CSV por combinado.
+
+## App instalável e avisos
+
+- O site é um PWA: no Android/Chrome aparece um convite "Instalar o app" no Início (diálogo nativo); no iPhone o Safari não oferece esse botão, então o Início mostra o passo a passo (Compartilhar → Adicionar à Tela de Início). Instalado, abre em tela cheia pelo ícone.
+- **Avisos de mensagens** (Web Push): o convidado ativa no Início ou no Perfil. Quem está com o app fechado recebe um aviso quando alguém posta no mural, no máximo um a cada 2 minutos por aparelho; quem está com o app aberto em segundo plano recebe um aviso local. No iPhone, só funciona com o app instalado na tela inicial (regra da Apple, iOS 16.4+).
+- O service worker (`client/public/sw.js`) não intercepta `/api`, `/uploads` nem `/socket.io`; guarda em cache só os assets com hash e a casca do app.
 
 ## Deploy no Railway
 
@@ -50,7 +63,7 @@ O projeto já está no ar: **projeto `galera-babi-pedro`**, serviço **`galera`*
 - URL: <https://galera-production-e5fd.up.railway.app>
 - Região `us-east4` (Virgínia, a de menor latência para o Brasil entre as disponíveis).
 - Volume `galera-data` montado em `/data` (banco `galera.db` + `uploads/`).
-- Variáveis cadastradas no serviço (ver tabela acima). Troque `INVITE_CODE`, `ADMIN_PHONES` e `TELAO_CODE` pelos valores definitivos no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.
+- Variáveis cadastradas no serviço (ver tabela acima). `INVITE_CODE`, `ADMIN_PHONES` e `TELAO_CODE` são provisórios e podem ser trocados no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.
 
 ### Infraestrutura como código (`.railway/railway.ts`)
 
@@ -83,7 +96,7 @@ railway config apply        # aplica (pede confirmação)
 | `/mural` | Chat em grupo em tempo real, com fotos |
 | `/mapa` | Hospedagens com quem fica em cada uma + fotos geolocalizadas |
 | `/fotos` | Galeria |
-| `/chegadas` | Quem chega e vai embora em cada dia |
+| `/agenda` | Combinados (dos noivos e da galera) com confirmação de presença; aba "Quem chega quando" |
 | `/perfil` | Editar dados, foto de perfil, sair |
 | `/telao` | Slideshow em tela cheia para a festa (código do telão ou login) |
 | `/admin` | Estatísticas, lista de convidados, CSV e ZIP (só `ADMIN_PHONES`) |

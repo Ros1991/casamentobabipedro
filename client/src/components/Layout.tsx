@@ -10,7 +10,7 @@ const NAV = [
   { to: '/mural', label: 'Mural', icon: MessageCircle },
   { to: '/mapa', label: 'Mapa', icon: MapPinned },
   { to: '/fotos', label: 'Fotos', icon: Images },
-  { to: '/chegadas', label: 'Chegadas', icon: CalendarDays },
+  { to: '/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/perfil', label: 'Perfil', icon: UserRound },
 ];
 

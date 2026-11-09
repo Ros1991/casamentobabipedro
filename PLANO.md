@@ -162,7 +162,7 @@ Exclusões são "soft delete" (campo `deleted_at`), para o admin poder reverter 
 ### 6.3 Mapa de hospedagem
 
 - Cada hospedagem pré-cadastrada tem coordenadas fixas; um pino por lugar com badge de quantidade. Tocar abre painel inferior com a lista de pessoas (nome, avatar, datas, WhatsApp se a pessoa permitiu).
-- "Outro lugar": o convidado digita um rótulo ("Casa da tia em Barra Bali") e posiciona o pino no mapa. Sem geocodificação externa no MVP, o que evita chaves de API e custos.
+- "Outro lugar": o convidado digita um rótulo ("Airbnb no Porto das Dunas") e posiciona o pino no mapa. Sem geocodificação externa no MVP, o que evita chaves de API e custos.
 - Camadas alternáveis: **Pessoas** e **Fotos**. Miniaturas de fotos circulares no mapa; aglomeradas quando muito próximas.
 - Visão em lista como alternativa ao mapa: agrupada por cidade → hospedagem → pessoas.
 
@@ -269,14 +269,15 @@ Seguir o site oficial para o convidado sentir que é "o mesmo casamento":
 - Extras (09/11): código do convite pela URL (`?codigo=`) e no QR do telão; **acompanhantes** (casal/família) cadastrados pelo convidado, contando nos números do mapa, das chegadas e do admin.
 - Infra: Dockerfile, railway.json, workflow do GitHub Actions (build + deploy opcional via token), PWA (manifest e ícones).
 
-**Fora desta rodada:** notificações push (Web Push exige VAPID + service worker e, no iPhone, o site instalado na tela inicial; o mural já mostra contador de não lidas). Pode entrar depois do beta se fizer sentido.
+- **Agenda / Combinados** (09/11): combinados dos noivos (oficiais) e da galera, com Vou/Talvez/Não vou, contagem por pessoas (acompanhantes incluídos), destaque no Início, pino no mapa, telão, mensagem automática no mural, aviso push geral para os oficiais e CSV de confirmados no admin. "Quem chega quando" virou aba da Agenda.
+- Extras (09/11, tarde): botão "Apagar" evidente e moderação de fotos no admin; **app instalável** (service worker + convite de instalação; passo a passo no iPhone) e **avisos de novas mensagens** via Web Push (no iPhone só com o app instalado, regra da Apple), com aviso local quando o app está em segundo plano.
 
 **Deploy (09/11/2026):** código no GitHub (`Ros1991/casamentobabipedro`) e projeto `galera-babi-pedro` no Railway com serviço ligado ao repositório, volume em `/data`, variáveis e domínio <https://galera-production-e5fd.up.railway.app>. Configuração em `.railway/railway.ts` (o `railway.json` foi aposentado pelo Railway). Códigos do convite/telão e telefones de admin estão **provisórios**.
 
 ## 14. Próximos passos
 
-1. Trocar no Railway os valores provisórios: `INVITE_CODE`, `TELAO_CODE` e `ADMIN_PHONES` (noivos + Rodrigo).
+1. ~~Valores provisórios~~ **Feito (09/11):** admins cadastrados, código do convite removido.
 1. Antes de divulgar, zerar os dados de teste em produção (convidado "Teste Produção" e foto de teste): apagar `/data/galera.db*` e `/data/uploads/*` via `railway ssh` e reiniciar.
 2. Testar num iPhone e num Android reais (câmera, GPS, instalação na tela inicial).
-3. Decidir o endereço final (subdomínio do site oficial via CNAME ou manter o do Railway) e atualizar `PUBLIC_URL`.
+3. Endereço final: por enquanto o domínio do Railway; domínio próprio se os noivos quiserem.
 4. Beta com a família; pedir à designer os arquivos do monograma/aquarelas para substituir os placeholders.

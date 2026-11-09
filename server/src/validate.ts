@@ -30,6 +30,15 @@ export function dateStr(value: unknown): string | null {
   return d.toISOString().slice(0, 10) === value ? value : null;
 }
 
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** "HH:MM" válido ou null. */
+export function timeStr(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  return TIME_RE.test(v) ? v : null;
+}
+
 export function validLatLng(lat: number | null, lng: number | null): lat is number {
   return lat !== null && lng !== null && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }

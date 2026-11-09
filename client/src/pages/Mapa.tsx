@@ -1,4 +1,4 @@
-import { Instagram, List, MessageCircle, Navigation, Users } from 'lucide-react';
+import { CalendarDays, Instagram, List, MessageCircle, Navigation, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Marker, useMapEvents } from 'react-leaflet';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -9,14 +9,15 @@ import { PhotoViewer } from '../components/PhotoViewer';
 import { BaseMap, FitBounds, FlyTo } from '../components/map/MapBase';
 import { PhotoClusterLayer } from '../components/map/PhotoClusterLayer';
 import { placeIcon } from '../components/map/icons';
-import { companionBadge, countPeople, firstName, formatDayMonth, joinNames, whatsappLink } from '../lib/format';
-import type { Accommodation, GuestPublic, Photo } from '../lib/types';
+import { companionBadge, countPeople, firstName, formatDayMonth, formatEventWhen, joinNames, toDateOnly, whatsappLink } from '../lib/format';
+import type { Accommodation, EventItem, GuestPublic, Photo } from '../lib/types';
 import { useStore } from '../store';
 
 interface PlaceSheet {
-  kind: 'preset' | 'custom';
+  kind: 'preset' | 'custom' | 'event';
   accommodation?: Accommodation;
   guest?: GuestPublic;
+  event?: EventItem;
 }
 
 function stayLabel(g: GuestPublic, accs: Record<string, Accommodation>): string {
@@ -41,6 +42,9 @@ export function Mapa() {
   const photos = useStore((s) => s.photos);
   const photosLoaded = useStore((s) => s.photosLoaded);
   const loadPhotos = useStore((s) => s.loadPhotos);
+  const events = useStore((s) => s.events);
+  const eventsLoaded = useStore((s) => s.eventsLoaded);
+  const loadEvents = useStore((s) => s.loadEvents);
   const online = useStore((s) => s.online);
   const [params, setParams] = useSearchParams();
 
@@ -57,7 +61,14 @@ export function Mapa() {
   useEffect(() => {
     if (!guestsLoaded) void loadGuests().catch(() => undefined);
     if (!photosLoaded) void loadPhotos().catch(() => undefined);
-  }, [guestsLoaded, photosLoaded, loadGuests, loadPhotos]);
+    if (!eventsLoaded) void loadEvents().catch(() => undefined);
+  }, [guestsLoaded, photosLoaded, eventsLoaded, loadGuests, loadPhotos, loadEvents]);
+
+  const today = toDateOnly(new Date());
+  const mapEvents = useMemo(
+    () => events.filter((e) => e.placeLat !== null && e.placeLng !== null && e.date >= today),
+    [events, today],
+  );
 
   const accommodations = useMemo(() => config?.accommodations ?? [], [config]);
   const accById = useMemo(() => Object.fromEntries(accommodations.map((a) => [a.id, a])), [accommodations]);
@@ -88,10 +99,21 @@ export function Mapa() {
 
   const bounds = useMemo<[number, number][]>(() => accommodations.map((a) => [a.lat, a.lng]), [accommodations]);
 
-  // Links profundos: ?foto=ID e ?lugar=ID
+  // Links profundos: ?foto=ID, ?lugar=ID e ?evento=ID
   useEffect(() => {
     const fotoId = params.get('foto');
     const lugarId = params.get('lugar');
+    const eventoId = params.get('evento');
+    if (eventoId && eventsLoaded) {
+      const ev = events.find((e) => e.id === eventoId);
+      if (ev && ev.placeLat !== null && ev.placeLng !== null) {
+        setFlyTarget([ev.placeLat, ev.placeLng]);
+        setSheet({ kind: 'event', event: ev });
+      }
+      params.delete('evento');
+      setParams(params, { replace: true });
+      return;
+    }
     if (fotoId && photosLoaded) {
       const idx = locatedPhotos.findIndex((p) => p.id === fotoId);
       if (idx >= 0) {
@@ -110,7 +132,7 @@ export function Mapa() {
       params.delete('lugar');
       setParams(params, { replace: true });
     }
-  }, [params, photosLoaded, locatedPhotos, accommodations.length, accById, setParams]);
+  }, [params, photosLoaded, locatedPhotos, accommodations.length, accById, setParams, eventsLoaded, events]);
 
   const onSelectPhoto = useCallback(
     (p: Photo) => {
@@ -162,6 +184,17 @@ export function Mapa() {
             />
           ))}
 
+        {showPeople &&
+          mapEvents.map((e) => (
+            <Marker
+              key={e.id}
+              position={[e.placeLat!, e.placeLng!]}
+              icon={placeIcon(e.title, e.counts.people, 'event', compact)}
+              eventHandlers={{ click: () => setSheet({ kind: 'event', event: e }) }}
+              zIndexOffset={500}
+            />
+          ))}
+
         {showPhotos && <PhotoClusterLayer photos={locatedPhotos} onSelect={onSelectPhoto} />}
       </BaseMap>
 
@@ -202,8 +235,48 @@ export function Mapa() {
       <BottomSheet
         open={!!sheet}
         onClose={() => setSheet(null)}
-        title={sheet?.kind === 'preset' ? sheet.accommodation?.name : sheet?.guest ? sheet.guest.customPlaceLabel : ''}
+        title={
+          sheet?.kind === 'preset'
+            ? sheet.accommodation?.name
+            : sheet?.kind === 'event'
+              ? sheet.event?.title
+              : sheet?.guest
+                ? sheet.guest.customPlaceLabel
+                : ''
+        }
       >
+        {sheet?.kind === 'event' && sheet.event && (
+          <div className="space-y-3">
+            {sheet.event.isOfficial && (
+              <span className="inline-block rounded-full bg-terra-dark px-2 py-0.5 text-[10px] font-bold tracking-wider text-cream uppercase">
+                Dos noivos 💍
+              </span>
+            )}
+            <div className="flex items-center gap-2 text-sm text-ink">
+              <CalendarDays size={16} className="text-terra" /> {formatEventWhen(sheet.event.date, sheet.event.time)}
+            </div>
+            {sheet.event.placeLabel && <div className="text-sm text-ink-soft">{sheet.event.placeLabel}</div>}
+            {sheet.event.description && <p className="text-sm whitespace-pre-wrap text-ink">{sheet.event.description}</p>}
+            <div className="text-sm text-ink-soft">
+              {sheet.event.counts.people === 0
+                ? 'Ninguém confirmou ainda.'
+                : `${sheet.event.counts.people} ${sheet.event.counts.people === 1 ? 'pessoa confirmada' : 'pessoas confirmadas'}`}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/agenda" className="flex items-center gap-1.5 rounded-full bg-terra-dark px-3.5 py-2 text-sm font-semibold text-cream">
+                <CalendarDays size={15} /> Responder na Agenda
+              </Link>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${sheet.event.placeLat},${sheet.event.placeLng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 rounded-full border border-terra px-3.5 py-2 text-sm font-semibold text-terra-dark"
+              >
+                <Navigation size={15} /> Abrir no Maps
+              </a>
+            </div>
+          </div>
+        )}
         {sheet?.kind === 'preset' && sheet.accommodation && (
           <div className="space-y-4">
             <div className="text-sm text-ink-soft">

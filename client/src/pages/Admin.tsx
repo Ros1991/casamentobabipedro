@@ -1,10 +1,10 @@
-import { Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { PhotoViewer } from '../components/PhotoViewer';
 import { api, errorMessage } from '../lib/api';
-import { formatDateTime, formatDayMonth, whatsappLink } from '../lib/format';
+import { formatDateTime, formatDayMonth, formatEventWhen, whatsappLink } from '../lib/format';
 import { toast } from '../lib/toast';
 import type { Accommodation, GuestPublic } from '../lib/types';
 import { useStore } from '../store';
@@ -33,6 +33,9 @@ export function Admin() {
   const loadPhotos = useStore((s) => s.loadPhotos);
   const deletePhoto = useStore((s) => s.deletePhoto);
   const storeGuests = useStore((s) => s.guests);
+  const events = useStore((s) => s.events);
+  const eventsLoaded = useStore((s) => s.eventsLoaded);
+  const loadEvents = useStore((s) => s.loadEvents);
   const [stats, setStats] = useState<Stats | null>(null);
   const [guests, setGuests] = useState<AdminGuest[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -58,8 +61,9 @@ export function Admin() {
     if (isAdmin) {
       void load();
       if (!photosLoaded) void loadPhotos().catch(() => undefined);
+      if (!eventsLoaded) void loadEvents().catch(() => undefined);
     }
-  }, [isAdmin, photosLoaded, loadPhotos]);
+  }, [isAdmin, photosLoaded, loadPhotos, eventsLoaded, loadEvents]);
 
   if (authStatus === 'authed' && !isAdmin) return <Navigate to="/" replace />;
 
@@ -105,6 +109,47 @@ export function Admin() {
           <Download size={15} /> Todas as fotos (ZIP)
         </a>
       </div>
+
+      <section className="overflow-hidden rounded-3xl border border-sand bg-white/60">
+        <div className="flex items-baseline justify-between border-b border-sand px-4 py-3">
+          <span className="flex items-center gap-2 font-serif text-lg font-semibold text-terra-dark">
+            <CalendarDays size={18} /> Combinados ({events.length})
+          </span>
+          <span className="text-xs text-ink-soft">Confirmados · talvez · não vão</span>
+        </div>
+        {eventsLoaded && events.length === 0 ? (
+          <p className="px-4 py-5 text-center text-sm text-ink-soft">Nenhum combinado ainda. Crie o primeiro na Agenda.</p>
+        ) : (
+          <ul className="divide-y divide-sand/70">
+            {events.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2">
+                    <span className="font-semibold text-ink">{e.title}</span>
+                    {e.isOfficial && <span className="rounded-full bg-terra-pale px-2 text-[10px] font-bold text-terra-dark uppercase">noivos</span>}
+                  </div>
+                  <div className="text-ink-soft">
+                    {formatEventWhen(e.date, e.time)}
+                    {e.placeLabel ? ` · ${e.placeLabel}` : ''}
+                  </div>
+                  <div className="text-ink-soft">
+                    <strong className="text-terra-dark">{e.counts.people}</strong> {e.counts.people === 1 ? 'pessoa confirmada' : 'pessoas confirmadas'} ·{' '}
+                    {e.counts.maybe} talvez · {e.counts.no} não {e.counts.no === 1 ? 'vai' : 'vão'}
+                  </div>
+                </div>
+                <a
+                  href={`/api/events/${e.id}/rsvps.csv`}
+                  download
+                  className="flex shrink-0 items-center gap-1 rounded-full border border-terra px-3 py-1.5 text-xs font-semibold text-terra-dark"
+                  title="Baixar lista de confirmados"
+                >
+                  <Download size={13} /> CSV
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="overflow-hidden rounded-3xl border border-sand bg-white/60">
         <div className="flex items-baseline justify-between border-b border-sand px-4 py-3">

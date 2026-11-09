@@ -130,6 +130,9 @@ body {
 .pin-place.pin-custom {
   background: var(--color-terra);
 }
+.pin-place.pin-event {
+  background: #3f6b7a;
+}
 .pin-place .pin-count {
   display: inline-flex;
   min-width: 18px;

@@ -24,11 +24,14 @@ export default defineRailway(() => {
       DATA_DIR: "/data",
       MAX_UPLOAD_MB: "12",
       PUBLIC_URL: "https://galera-production-e5fd.up.railway.app",
+      VAPID_SUBJECT: "https://galera-production-e5fd.up.railway.app",
       // Segredos e códigos ficam só no Railway (Variables), nunca no repositório
       SESSION_SECRET: preserve(),
       INVITE_CODE: preserve(),
       ADMIN_PHONES: preserve(),
       TELAO_CODE: preserve(),
+      VAPID_PUBLIC_KEY: preserve(),
+      VAPID_PRIVATE_KEY: preserve(),
     },
   });
 

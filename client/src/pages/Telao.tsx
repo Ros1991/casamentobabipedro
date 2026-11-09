@@ -4,13 +4,14 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Avatar } from '../components/Avatar';
 import { Monogram } from '../components/Monogram';
 import { api, ApiError, errorMessage } from '../lib/api';
-import { formatTime } from '../lib/format';
+import { formatEventWhen, formatTime } from '../lib/format';
 import { getSocket } from '../lib/socket';
-import type { Message, Photo, Wedding } from '../lib/types';
+import type { EventItem, Message, Photo, Wedding } from '../lib/types';
 
 interface Feed {
   photos: Photo[];
   stats: { guests: number; people: number; photos: number };
+  nextEvents?: EventItem[];
   wedding: Wedding;
   publicUrl: string;
   inviteCode: string | null;
@@ -213,6 +214,23 @@ export function Telao() {
             <div className="text-[11px] font-semibold tracking-widest text-cream/60 uppercase">na galera</div>
           </div>
         </div>
+        {feed.nextEvents && feed.nextEvents.length > 0 && (
+          <div className="w-full rounded-2xl bg-white/5 p-3 text-left">
+            <div className="mb-1.5 text-[11px] font-semibold tracking-widest text-cream/60 uppercase">Combinados dos noivos</div>
+            <ul className="space-y-1.5">
+              {feed.nextEvents.map((e) => (
+                <li key={e.id} className="text-sm leading-snug">
+                  <span className="font-semibold">{e.title}</span>
+                  <span className="text-cream/70">
+                    {' '}
+                    · {formatEventWhen(e.date, e.time)}
+                    {e.counts.people > 0 ? ` · ${e.counts.people} confirmados` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {recent.length > 0 && (
           <div className="mt-auto grid w-full grid-cols-4 gap-1.5">
             {recent.map((p, i) => (

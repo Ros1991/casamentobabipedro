@@ -37,6 +37,12 @@ export const config = {
   telaoCode: (process.env.TELAO_CODE ?? '').trim(),
   maxUploadBytes: Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 12)) * 1024 * 1024,
   publicUrl: (process.env.PUBLIC_URL ?? '').trim().replace(/\/$/, ''),
+  /** Web Push (VAPID). Sem as duas chaves, os avisos ficam desligados. */
+  vapidPublicKey: (process.env.VAPID_PUBLIC_KEY ?? '').trim(),
+  vapidPrivateKey: (process.env.VAPID_PRIVATE_KEY ?? '').trim(),
+  vapidSubject:
+    (process.env.VAPID_SUBJECT ?? '').trim() ||
+    ((process.env.PUBLIC_URL ?? '').trim().startsWith('https://') ? (process.env.PUBLIC_URL ?? '').trim() : 'mailto:admin@localhost'),
   /** Provedor de tiles do mapa (padrão: OpenStreetMap, sem chave). */
   mapTileUrl: (process.env.MAP_TILE_URL ?? '').trim() || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   mapTileAttribution:

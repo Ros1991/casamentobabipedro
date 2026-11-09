@@ -8,7 +8,9 @@ const BED = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke=
 const RINGS = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="9" cy="13" r="6"/><circle cx="15" cy="13" r="6"/><path d="M12 3l2 3h-4z" fill="currentColor"/></svg>`;
 const HOME = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`;
 
-export type PlaceKind = 'venue' | 'preset' | 'custom';
+const CALENDAR = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>`;
+
+export type PlaceKind = 'venue' | 'preset' | 'custom' | 'event';
 
 /**
  * Pino de lugar (hotel, local da festa ou "outro lugar").
@@ -27,10 +29,11 @@ export function placeIcon(label: string, count: number, kind: PlaceKind, compact
 }
 
 function buildPlaceIcon(label: string, count: number, kind: PlaceKind, compact: boolean): L.DivIcon {
-  const icon = kind === 'venue' ? RINGS : kind === 'custom' ? HOME : BED;
+  const icon = kind === 'venue' ? RINGS : kind === 'custom' ? HOME : kind === 'event' ? CALENDAR : BED;
   const classes = ['pin-place'];
   if (kind === 'venue') classes.push('pin-venue');
   if (kind === 'custom') classes.push('pin-custom');
+  if (kind === 'event') classes.push('pin-event');
   if (compact) classes.push('pin-compact');
   const labelHtml = compact ? '' : `<span>${escapeHtml(label)}</span>`;
   const countHtml = count > 0 ? `<span class="pin-count">${count}</span>` : '';

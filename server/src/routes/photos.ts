@@ -5,6 +5,7 @@ import { isAdmin, requireGuest } from '../auth.js';
 import { db } from '../db/index.js';
 import { messages, photos } from '../db/schema.js';
 import { ImageError, processPhoto } from '../images.js';
+import { notifyNewMessage } from '../push.js';
 import { loadMessage, loadPhotos } from '../queries.js';
 import { broadcast } from '../realtime.js';
 import { num, str, validLatLng } from '../validate.js';
@@ -67,6 +68,7 @@ export default async function photoRoutes(app: FastifyInstance): Promise<void> {
 
       const dto = loadMessage(messageId)!;
       broadcast('message:new', dto);
+      void notifyNewMessage(dto);
       return { message: dto, photo: dto.photo };
     },
   );

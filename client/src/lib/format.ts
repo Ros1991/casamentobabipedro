@@ -107,6 +107,11 @@ export function pluralize(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`;
 }
 
+/** "Sáb, 21/12 às 09:00" */
+export function formatEventWhen(date: string, time: string | null): string {
+  return `${formatDateShort(date)}${time ? ` às ${time}` : ''}`;
+}
+
 /** "Marina" / "Marina e João" / "Marina, João e Ana" */
 export function joinNames(names: string[]): string {
   if (names.length === 0) return '';

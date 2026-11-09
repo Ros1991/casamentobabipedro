@@ -1,7 +1,27 @@
-import { and, desc, eq, inArray, isNull, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from './db/index.js';
-import { guests, messages, photos, reactions, type Guest, type Message, type Photo } from './db/schema.js';
-import { guestLite, photoDTO, type GuestLiteDTO, type MessageDTO, type PhotoDTO, type ReactionDTO } from './dto.js';
+import {
+  eventRsvps,
+  events,
+  guests,
+  messages,
+  photos,
+  reactions,
+  type EventRow,
+  type Guest,
+  type Message,
+  type Photo,
+} from './db/schema.js';
+import {
+  guestLite,
+  photoDTO,
+  type EventDTO,
+  type GuestLiteDTO,
+  type MessageDTO,
+  type PhotoDTO,
+  type ReactionDTO,
+  type RsvpDTO,
+} from './dto.js';
 
 export interface PhotoWithGuestDTO extends PhotoDTO {
   guest: GuestLiteDTO;
@@ -90,4 +110,63 @@ export function loadPhotos(limit?: number): PhotoWithGuestDTO[] {
 
 export function findGuestById(id: string): Guest | undefined {
   return db.select().from(guests).where(eq(guests.id, id)).get();
+}
+
+/** Combinados ativos, do mais próximo ao mais distante, com todas as confirmações. */
+export function loadEvents(): EventDTO[] {
+  const rows = db.select().from(events).where(isNull(events.deletedAt)).orderBy(asc(events.date), asc(events.time)).all();
+  return hydrateEvents(rows);
+}
+
+export function loadEvent(id: string): EventDTO | null {
+  const row = db.select().from(events).where(eq(events.id, id)).get();
+  if (!row) return null;
+  return hydrateEvents([row])[0] ?? null;
+}
+
+function hydrateEvents(rows: EventRow[]): EventDTO[] {
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const rsvpRows = db.select().from(eventRsvps).where(inArray(eventRsvps.eventId, ids)).all();
+  const creatorIds = [...new Set(rows.map((r) => r.createdBy))];
+  const creators = new Map(
+    db
+      .select()
+      .from(guests)
+      .where(inArray(guests.id, creatorIds))
+      .all()
+      .map((g) => [g.id, g]),
+  );
+  const byEvent = new Map<string, RsvpDTO[]>();
+  for (const r of rsvpRows) {
+    const list = byEvent.get(r.eventId) ?? [];
+    list.push({ guestId: r.guestId, status: r.status, peopleCount: r.peopleCount, note: r.note, updatedAt: r.updatedAt });
+    byEvent.set(r.eventId, list);
+  }
+  return rows.map((r) => {
+    const rsvps = byEvent.get(r.id) ?? [];
+    const yes = rsvps.filter((x) => x.status === 'yes');
+    const creator = creators.get(r.createdBy);
+    return {
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      date: r.date,
+      time: r.time,
+      placeLabel: r.placeLabel,
+      placeLat: r.placeLat,
+      placeLng: r.placeLng,
+      isOfficial: r.isOfficial,
+      createdBy: creator ? guestLite(creator) : { id: r.createdBy, name: 'Convidado', avatarUrl: null },
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      rsvps,
+      counts: {
+        yes: yes.length,
+        maybe: rsvps.filter((x) => x.status === 'maybe').length,
+        no: rsvps.filter((x) => x.status === 'no').length,
+        people: yes.reduce((sum, x) => sum + x.peopleCount, 0),
+      },
+    };
+  });
 }

@@ -5,7 +5,7 @@ import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { guests, photos } from '../db/schema.js';
 import { countPeople } from '../dto.js';
-import { loadPhotos } from '../queries.js';
+import { loadEvents, loadPhotos } from '../queries.js';
 import { str } from '../validate.js';
 import { WEDDING } from '../wedding.js';
 
@@ -30,9 +30,14 @@ export default async function telaoRoutes(app: FastifyInstance): Promise<void> {
     }
     const guestRows = db.select({ companions: guests.companions }).from(guests).all();
     const photoCount = db.select({ n: count() }).from(photos).where(isNull(photos.deletedAt)).get()?.n ?? 0;
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: WEDDING.timeZone }).format(new Date());
+    const nextEvents = loadEvents()
+      .filter((e) => e.isOfficial && e.date >= today)
+      .slice(0, 3);
     return {
       photos: loadPhotos(150),
       stats: { guests: guestRows.length, people: countPeople(guestRows), photos: photoCount },
+      nextEvents,
       wedding: WEDDING,
       publicUrl: config.publicUrl,
       // Vai no QR code: quem escaneia entra sem digitar o código (o telão já é protegido)

@@ -104,6 +104,72 @@ export const reactions = sqliteTable(
   (t) => [primaryKey({ columns: [t.messageId, t.guestId, t.emoji] })],
 );
 
+/** Assinaturas de Web Push (um aparelho/navegador por linha). */
+export const pushSubscriptions = sqliteTable(
+  'push_subscriptions',
+  {
+    id: text('id').primaryKey(),
+    guestId: text('guest_id')
+      .notNull()
+      .references(() => guests.id),
+    endpoint: text('endpoint').notNull().unique(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: integer('created_at').notNull(),
+    lastNotifiedAt: integer('last_notified_at'),
+  },
+  (t) => [index('push_guest_idx').on(t.guestId)],
+);
+
+/** Combinados: programas criados pelos noivos (oficiais) ou pela galera, com confirmação de presença. */
+export const events = sqliteTable(
+  'events',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    description: text('description'),
+    /** YYYY-MM-DD */
+    date: text('date').notNull(),
+    /** HH:MM (opcional) */
+    time: text('time'),
+    placeLabel: text('place_label'),
+    placeLat: real('place_lat'),
+    placeLng: real('place_lng'),
+    /** Criado por um admin (noivos/organização): aparece em destaque e avisa todo mundo */
+    isOfficial: integer('is_official', { mode: 'boolean' }).notNull().default(false),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => guests.id),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    deletedAt: integer('deleted_at'),
+  },
+  (t) => [index('events_date_idx').on(t.date)],
+);
+
+export const eventRsvps = sqliteTable(
+  'event_rsvps',
+  {
+    eventId: text('event_id')
+      .notNull()
+      .references(() => events.id),
+    guestId: text('guest_id')
+      .notNull()
+      .references(() => guests.id),
+    /** yes | maybe | no */
+    status: text('status').notNull(),
+    /** Quantas pessoas da turma do convidado vão (1 + acompanhantes que vão) */
+    peopleCount: integer('people_count').notNull().default(1),
+    note: text('note'),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.eventId, t.guestId] })],
+);
+
+export type EventRow = typeof events.$inferSelect;
+export type EventRsvpRow = typeof eventRsvps.$inferSelect;
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export type Accommodation = typeof accommodations.$inferSelect;
 export type Guest = typeof guests.$inferSelect;
 export type Photo = typeof photos.$inferSelect;

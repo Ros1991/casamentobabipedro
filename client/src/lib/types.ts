@@ -47,6 +47,7 @@ export interface AppConfig {
   telaoEnabled: boolean;
   wedding: Wedding;
   map: { tileUrl: string; attribution: string };
+  push: { enabled: boolean; publicKey: string | null };
   accommodations: Accommodation[];
 }
 
@@ -135,6 +136,45 @@ export interface EnterPayload extends StayInput {
 }
 
 export const MAX_COMPANIONS = 4;
+
+export type RsvpStatus = 'yes' | 'maybe' | 'no';
+
+export interface EventRsvp {
+  guestId: string;
+  status: RsvpStatus | string;
+  peopleCount: number;
+  note: string | null;
+  updatedAt: number;
+}
+
+/** Combinado: programa dos noivos (oficial) ou da galera, com confirmação de presença. */
+export interface EventItem {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string;
+  time: string | null;
+  placeLabel: string | null;
+  placeLat: number | null;
+  placeLng: number | null;
+  isOfficial: boolean;
+  createdBy: GuestLite;
+  createdAt: number;
+  updatedAt: number;
+  rsvps: EventRsvp[];
+  counts: { yes: number; maybe: number; no: number; people: number };
+}
+
+export interface EventPayload {
+  title: string;
+  description: string | null;
+  date: string;
+  time: string | null;
+  placeLabel: string | null;
+  placeLat: number | null;
+  placeLng: number | null;
+  isOfficial?: boolean;
+}
 
 export const EMOJIS = ['❤️', '😂', '🥹', '🔥', '👏', '🙌'];
 

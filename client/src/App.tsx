@@ -3,7 +3,7 @@ import { Layout } from './components/Layout';
 import { RequireAuth } from './components/RequireAuth';
 import { Toasts } from './components/Toasts';
 import { Admin } from './pages/Admin';
-import { Chegadas } from './pages/Chegadas';
+import { Agenda } from './pages/Agenda';
 import { Enter } from './pages/Enter';
 import { Fotos } from './pages/Fotos';
 import { Home } from './pages/Home';
@@ -25,7 +25,8 @@ export default function App() {
             <Route path="mural" element={<Mural />} />
             <Route path="mapa" element={<Mapa />} />
             <Route path="fotos" element={<Fotos />} />
-            <Route path="chegadas" element={<Chegadas />} />
+            <Route path="agenda" element={<Agenda />} />
+            <Route path="chegadas" element={<Navigate to="/agenda?tab=chegadas" replace />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="admin" element={<Admin />} />
           </Route>

@@ -15,6 +15,20 @@
       "when": 1794227118881,
       "tag": "0001_acompanhantes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794243391729,
+      "tag": "0002_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794253394034,
+      "tag": "0003_combinados",
+      "breakpoints": true
     }
   ]
 }

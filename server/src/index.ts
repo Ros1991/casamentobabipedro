@@ -10,12 +10,15 @@ import { hasTelaoAccess, resolveGuestByToken, sessionTokenFromRequest } from './
 import { config } from './config.js';
 import { closeDb, db, runMigrations } from './db/index.js';
 import { guests } from './db/schema.js';
+import { setupPush } from './push.js';
 import { setupRealtime } from './realtime.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
+import eventRoutes from './routes/events.js';
 import guestRoutes from './routes/guests.js';
 import messageRoutes from './routes/messages.js';
 import photoRoutes from './routes/photos.js';
+import pushRoutes from './routes/push.js';
 import telaoRoutes from './routes/telao.js';
 import { seedAccommodations } from './seed.js';
 
@@ -85,7 +88,10 @@ async function main(): Promise<void> {
   await app.register(messageRoutes);
   await app.register(photoRoutes);
   await app.register(telaoRoutes);
+  await app.register(eventRoutes);
+  await app.register(pushRoutes);
   await app.register(adminRoutes);
+  setupPush(app.log);
 
   // Fotos: só para convidados logados ou telão.
   await app.register(async (scope) => {
@@ -115,12 +121,15 @@ async function main(): Promise<void> {
       wildcard: false,
       cacheControl: false,
       setHeaders: (res, filePath) => {
-        // Assets do Vite têm hash no nome: cache longo. O resto (index.html, manifest) sempre revalida.
+        // Assets do Vite têm hash no nome: cache longo. O resto (index.html, manifest, sw.js) sempre revalida.
         const normalized = String(filePath).replace(/\\/g, '/');
         if (normalized.includes('/assets/')) {
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         } else {
           res.setHeader('Cache-Control', 'no-cache');
+        }
+        if (normalized.endsWith('/sw.js')) {
+          res.setHeader('Service-Worker-Allowed', '/');
         }
       },
     });
