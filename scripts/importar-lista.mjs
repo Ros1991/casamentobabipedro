@@ -1,7 +1,7 @@
 // Importa a lista de confirmados (planilha .xlsx dos noivos) para o site.
 //
 // Uso:
-//   IMPORT_TOKEN=... node scripts/importar-lista.mjs "C:/caminho/lista.xlsx" https://endereco-do-site [--dry]
+//   IMPORT_TOKEN=... node scripts/importar-lista.mjs "C:/caminho/lista.xlsx" https://endereco-do-site [--dry] [--reset]
 //
 // A planilha NÃO fica no repositório (tem telefone e CPF). O script lê o arquivo, monta os grupos e manda
 // para POST /api/import, protegido pelo token IMPORT_TOKEN (variável do servidor). --dry só mostra o que faria.
@@ -17,6 +17,8 @@ import zlib from 'node:zlib';
 
 const [file, baseUrl] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const dry = process.argv.includes('--dry');
+// --reset apaga TUDO do site antes de importar (convidados, mural, fotos, combinados). Só para zerar dados de teste.
+const reset = process.argv.includes('--reset');
 if (!file || !baseUrl) {
   console.error('Uso: IMPORT_TOKEN=... node scripts/importar-lista.mjs <planilha.xlsx> <url-do-site> [--dry]');
   process.exit(1);
@@ -287,7 +289,7 @@ if (notes.length) console.log('\nPontos de atenção:\n- ' + notes.join('\n- '))
 const res = await fetch(baseUrl.replace(/\/$/, '') + '/api/import', {
   method: 'POST',
   headers: { 'content-type': 'application/json', 'x-import-token': token },
-  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, dryRun: dry }),
+  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, dryRun: dry, reset }),
 });
 const out = await res.json().catch(() => ({}));
 console.log(`\n${dry ? 'SIMULAÇÃO' : 'IMPORTAÇÃO'} (${res.status}):`, JSON.stringify(out, null, 1));
