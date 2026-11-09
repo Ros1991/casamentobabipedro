@@ -136,7 +136,7 @@ export function Enter() {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="mx-auto -mt-4 max-w-lg space-y-6 px-4 pb-12">
+      <form onSubmit={onSubmit} className="relative mx-auto -mt-4 max-w-lg space-y-6 px-4 pb-12">
         <div className="space-y-4 rounded-3xl border border-sand bg-cream p-5 shadow-soft">
           <div className="-mt-14 flex justify-center -space-x-3">
             <img src="/img/pedro.webp" alt="Pedro" width={80} height={80} className="size-20 rounded-full border-4 border-cream object-cover shadow-soft" />
@@ -185,7 +185,7 @@ export function Enter() {
         </div>
 
         <div className="space-y-3 rounded-3xl border border-sand bg-cream p-5 shadow-soft">
-          <h2 className="flex items-center gap-2 font-serif text-2xl font-semibold text-terra-dark">
+          <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-terra-dark">
             <Users size={22} /> Vem alguém com você?
           </h2>
           <p className="text-sm text-ink-soft">Casal, filhos, família: adicione quem vem junto e eles já contam com você.</p>
@@ -193,12 +193,12 @@ export function Enter() {
         </div>
 
         <div className="space-y-4 rounded-3xl border border-sand bg-cream p-5 shadow-soft">
-          <h2 className="font-serif text-2xl font-semibold text-terra-dark">Onde você vai ficar?</h2>
+          <h2 className="font-serif text-xl font-semibold text-terra-dark">Onde você vai ficar?</h2>
           <StayPicker value={stay} onChange={setStay} accommodations={config.accommodations} mapCenter={wedding.mapCenter} />
         </div>
 
         <div className="space-y-4 rounded-3xl border border-sand bg-cream p-5 shadow-soft">
-          <h2 className="flex items-center gap-2 font-serif text-2xl font-semibold text-terra-dark">
+          <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-terra-dark">
             <CalendarDays size={22} /> Quando você chega e vai embora?
           </h2>
           <p className="text-sm text-ink-soft">
