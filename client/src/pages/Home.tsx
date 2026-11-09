@@ -64,15 +64,18 @@ export function Home() {
 
   const guestList = useMemo(() => Object.values(guests), [guests]);
   const today = toDateOnly(new Date());
+  /** Combinados dos noivos que ainda estão por vir e que eu não respondi */
+  const pendingOfficial = useMemo(
+    () => events.filter((e) => e.date >= today && e.isOfficial && !e.rsvps.some((r) => r.guestId === me?.id)),
+    [events, today, me?.id],
+  );
+  // No Início: primeiro os que faltam responder; sem pendências, os dois próximos
   const featuredEvents = useMemo(() => {
+    if (pendingOfficial.length > 0) return pendingOfficial.slice(0, 2);
     const upcoming = events.filter((e) => e.date >= today);
     const official = upcoming.filter((e) => e.isOfficial);
     return (official.length > 0 ? official : upcoming).slice(0, 2);
-  }, [events, today]);
-  const pendingOfficial = useMemo(
-    () => featuredEvents.filter((e) => e.isOfficial && !e.rsvps.some((r) => r.guestId === me?.id)).length,
-    [featuredEvents, me?.id],
-  );
+  }, [events, today, pendingOfficial]);
   const tomorrow = addDays(today, 1);
   const arrivingSoon = useMemo(
     () => guestList.filter((g) => g.arrivalDate === today || g.arrivalDate === tomorrow),
@@ -179,9 +182,11 @@ export function Home() {
                 Ver agenda
               </Link>
             </div>
-            {pendingOfficial > 0 && (
+            {pendingOfficial.length > 0 && (
               <p className="rounded-2xl bg-rose/10 px-3 py-2 text-sm font-semibold text-rose">
-                Os noivos estão esperando sua resposta: confirme abaixo se você vai.
+                {pendingOfficial.length === 1
+                  ? `Falta responder 1 combinado dos noivos: ${pendingOfficial[0].title}.`
+                  : `Falta responder ${pendingOfficial.length} combinados dos noivos${pendingOfficial.length > 2 ? ' (os primeiros estão abaixo; o resto na Agenda)' : ''}.`}
               </p>
             )}
             {featuredEvents.map((e) => (

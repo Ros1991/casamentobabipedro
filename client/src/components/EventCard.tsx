@@ -18,6 +18,13 @@ interface Props {
 
 const STATUS_LABEL: Record<string, string> = { yes: 'Vou', maybe: 'Talvez', no: 'Não vou' };
 
+/** Botão único mostrado depois que a pessoa responde. */
+const ANSWER: Record<string, { label: string; tone: string }> = {
+  yes: { label: 'Você vai', tone: 'border-terra-dark bg-terra-dark text-cream' },
+  maybe: { label: 'Talvez você vá', tone: 'border-terra bg-terra text-cream' },
+  no: { label: 'Você não vai', tone: 'border-rose bg-rose text-cream' },
+};
+
 export function EventCard({ event, onEdit, compact = false }: Props) {
   const me = useStore((s) => s.me);
   const isAdmin = useStore((s) => s.isAdmin);
@@ -78,7 +85,7 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
         key={status}
         type="button"
         disabled={busy}
-        onClick={() => respond(active ? 'none' : status)}
+        onClick={() => respond(status)}
         className={`flex flex-1 items-center justify-center gap-1 rounded-full border px-3 py-2 text-sm font-semibold transition disabled:opacity-60 ${tone}`}
       >
         <Icon size={15} /> {label}
@@ -190,12 +197,29 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
       )}
 
       {/* Confirmação */}
-      {!isPast && (
-        <div className="mt-3 flex gap-2">
-          {rsvpButton('yes', 'Vou', Check)}
-          {rsvpButton('maybe', 'Talvez', HelpCircle)}
-          {rsvpButton('no', 'Não vou', X)}
+      {/* Sem resposta: três opções. Com resposta: um botão só dizendo o que foi escolhido; tocar nele desfaz. */}
+      {!isPast && !myStatus && (
+        <div className="mt-3">
+          <div className="mb-1.5 text-xs font-semibold text-ink-soft">Você vai?</div>
+          <div className="flex gap-2">
+            {rsvpButton('yes', 'Vou', Check)}
+            {rsvpButton('maybe', 'Talvez', HelpCircle)}
+            {rsvpButton('no', 'Não vou', X)}
+          </div>
         </div>
+      )}
+      {!isPast && myStatus && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => respond('none')}
+          aria-label={`${ANSWER[myStatus]?.label ?? 'Respondido'}. Toque para mudar a resposta.`}
+          className={`mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 font-semibold transition disabled:opacity-60 ${ANSWER[myStatus]?.tone ?? ''}`}
+        >
+          {myStatus === 'yes' ? <Check size={18} /> : myStatus === 'maybe' ? <HelpCircle size={18} /> : <X size={18} />}
+          <span>{ANSWER[myStatus]?.label ?? 'Respondido'}</span>
+          <span className="text-xs font-normal opacity-80">· toque para mudar</span>
+        </button>
       )}
 
       {myStatus === 'yes' && partySize > 1 && !isPast && (
