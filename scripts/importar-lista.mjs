@@ -12,8 +12,13 @@
 //   - cada pessoa com telefone próprio vira um convidado; quem não tem telefone (ou divide o número com outra
 //     pessoa do convite) entra como acompanhante;
 //   - leva hospedagem, chegada, saída e CPF, e cria os combinados da programação com as presenças do formulário.
+import dns from 'node:dns';
 import fs from 'node:fs';
+import path from 'node:path';
 import zlib from 'node:zlib';
+
+// O Railway falha por IPv6 em algumas redes: força IPv4
+dns.setDefaultResultOrder('ipv4first');
 
 const [file, baseUrl] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const dry = process.argv.includes('--dry');
@@ -23,9 +28,11 @@ if (!file || !baseUrl) {
   console.error('Uso: IMPORT_TOKEN=... node scripts/importar-lista.mjs <planilha.xlsx> <url-do-site> [--dry]');
   process.exit(1);
 }
-const token = process.env.IMPORT_TOKEN;
+// Token: variável IMPORT_TOKEN ou o arquivo data/import-token.txt (a pasta data/ não vai para o git)
+const tokenFile = path.resolve(import.meta.dirname, '../data/import-token.txt');
+const token = process.env.IMPORT_TOKEN || (fs.existsSync(tokenFile) ? fs.readFileSync(tokenFile, 'utf8').trim() : '');
 if (!token) {
-  console.error('Defina IMPORT_TOKEN (o mesmo valor configurado no servidor).');
+  console.error('Defina IMPORT_TOKEN (o mesmo valor configurado no servidor) ou grave o token em data/import-token.txt.');
   process.exit(1);
 }
 
