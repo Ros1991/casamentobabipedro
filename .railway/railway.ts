@@ -27,7 +27,8 @@ export default defineRailway(() => {
       VAPID_SUBJECT: "https://galera-production-e5fd.up.railway.app",
       // Segredos e códigos ficam só no Railway (Variables), nunca no repositório
       SESSION_SECRET: preserve(),
-      INVITE_CODE: preserve(),
+      // Sem INVITE_CODE: entrada sem código, a pedido dos noivos (menos barreira). Para exigir, declare aqui e no Railway.
+      IMPORT_TOKEN: preserve(),
       ADMIN_PHONES: preserve(),
       TELAO_CODE: preserve(),
       VAPID_PUBLIC_KEY: preserve(),

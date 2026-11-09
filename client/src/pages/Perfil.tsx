@@ -7,6 +7,7 @@ import { InstallBanner } from '../components/InstallBanner';
 import { NotificationsCard } from '../components/NotificationsCard';
 import { StayPicker } from '../components/StayPicker';
 import { errorMessage } from '../lib/api';
+import { isValidCpf, maskCpf } from '../lib/cpf';
 import { formatPhone } from '../lib/format';
 import { compressImage } from '../lib/image';
 import { toast } from '../lib/toast';
@@ -32,6 +33,8 @@ export function Perfil() {
   const [arrivalDate, setArrivalDate] = useState('');
   const [departureDate, setDepartureDate] = useState('');
   const [companions, setCompanions] = useState<string[]>([]);
+  const [companionCpfs, setCompanionCpfs] = useState<string[]>([]);
+  const [cpf, setCpf] = useState('');
   const [showPhone, setShowPhone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -43,6 +46,8 @@ export function Perfil() {
     setArrivalDate(me.arrivalDate ?? '');
     setDepartureDate(me.departureDate ?? '');
     setCompanions(me.companions ?? []);
+    setCompanionCpfs((me.companionCpfs ?? []).map(maskCpf));
+    setCpf(me.cpf ? maskCpf(me.cpf) : '');
     setShowPhone(me.showPhone);
     setStay({
       stayMode: me.accommodationId ? 'preset' : me.customPlaceLabel ? 'custom' : 'unknown',
@@ -62,6 +67,10 @@ export function Perfil() {
     if (name.trim().length < 2) return toast.error('Digite seu nome.');
     if (stay.stayMode === 'custom' && !stay.customPlaceLabel.trim()) return toast.error('Diga onde você vai ficar.');
     if (arrivalDate && departureDate && departureDate < arrivalDate) return toast.error('A saída precisa ser depois da chegada.');
+    if (cpf.trim() && !isValidCpf(cpf)) return toast.error('Seu CPF não confere. Verifique os números.');
+    const kept = companions.map((c, i) => ({ name: c.trim(), cpf: (companionCpfs[i] ?? '').trim() })).filter((c) => c.name);
+    const badCpf = kept.find((c) => c.cpf && !isValidCpf(c.cpf));
+    if (badCpf) return toast.error(`O CPF de ${badCpf.name} não confere. Verifique os números.`);
     setSaving(true);
     try {
       await updateMe({
@@ -69,7 +78,9 @@ export function Perfil() {
         ...stay,
         arrivalDate: arrivalDate || null,
         departureDate: departureDate || null,
-        companions: companions.map((c) => c.trim()).filter(Boolean),
+        companions: kept.map((c) => c.name),
+        companionCpfs: kept.map((c) => c.cpf),
+        cpf: cpf.trim(),
         showPhone,
       });
       toast.success('Perfil atualizado!');
@@ -130,7 +141,7 @@ export function Perfil() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate font-serif text-2xl font-semibold text-terra-dark">{me.name}</div>
-          <div className="text-sm text-ink-soft">{formatPhone(me.phone)}</div>
+          {me.phone && <div className="text-sm text-ink-soft">{formatPhone(me.phone)}</div>}
           {me.avatarUrl && (
             <button type="button" onClick={onRemoveAvatar} disabled={avatarBusy} className="mt-1 flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-rose">
               <Trash2 size={12} /> Remover foto
@@ -143,6 +154,12 @@ export function Perfil() {
         <label className="block">
           <span className="mb-1 block text-sm font-semibold text-terra-dark">Nome</span>
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} className={inputClass} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-semibold text-terra-dark">
+            CPF <span className="font-normal text-ink-soft">(opcional, agiliza o check-in; só os noivos veem)</span>
+          </span>
+          <input type="text" inputMode="numeric" autoComplete="off" value={cpf} onChange={(e) => setCpf(maskCpf(e.target.value))} placeholder="000.000.000-00" className={inputClass} />
         </label>
         <label className="flex items-start gap-2 text-sm text-ink">
           <input type="checkbox" checked={showPhone} onChange={(e) => setShowPhone(e.target.checked)} className="mt-1 accent-terra" />
@@ -157,7 +174,7 @@ export function Perfil() {
         <h2 className="flex items-center gap-2 font-serif text-2xl font-semibold text-terra-dark">
           <Users size={22} /> Quem vem comigo
         </h2>
-        <CompanionsInput value={companions} onChange={setCompanions} />
+        <CompanionsInput value={companions} onChange={setCompanions} cpfs={companionCpfs} onCpfsChange={setCompanionCpfs} />
       </section>
 
       <section className="space-y-4 rounded-3xl border border-sand bg-cream p-5 shadow-soft">

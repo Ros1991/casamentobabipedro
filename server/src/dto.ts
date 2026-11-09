@@ -1,5 +1,6 @@
 import { isAdmin } from './auth.js';
 import type { Accommodation, Guest, Photo } from './db/schema.js';
+import { isPlaceholderPhone } from './phone.js';
 
 export const uploadUrl = (key: string | null | undefined): string | null => (key ? `/uploads/${key}` : null);
 
@@ -24,13 +25,20 @@ export interface GuestPublicDTO extends GuestLiteDTO {
   /** 1 + acompanhantes */
   partySize: number;
   isAdmin: boolean;
+  /** Já entrou no app (false = veio da lista de confirmados e ainda não entrou) */
+  joined: boolean;
   createdAt: number;
   lastSeenAt: number;
 }
 
 export interface GuestMeDTO extends GuestPublicDTO {
+  /** '' quando a pessoa veio da lista sem telefone */
   phone: string;
   showPhone: boolean;
+  cpf: string | null;
+  /** Alinhado com companions ('' quando não informado) */
+  companionCpfs: string[];
+  inviteLabel: string | null;
 }
 
 export interface PhotoDTO {
@@ -78,10 +86,11 @@ export function guestPublic(g: Guest): GuestPublicDTO {
     customLng: g.customLng,
     arrivalDate: g.arrivalDate,
     departureDate: g.departureDate,
-    whatsapp: g.showPhone ? g.phone : null,
+    whatsapp: g.showPhone && !isPlaceholderPhone(g.phone) ? g.phone : null,
     companions: g.companions ?? [],
     partySize: 1 + (g.companions?.length ?? 0),
     isAdmin: isAdmin(g),
+    joined: g.claimedAt !== null,
     createdAt: g.createdAt,
     lastSeenAt: g.lastSeenAt,
   };
@@ -93,7 +102,15 @@ export function countPeople(list: Pick<Guest, 'companions'>[]): number {
 }
 
 export function guestMe(g: Guest): GuestMeDTO {
-  return { ...guestPublic(g), phone: g.phone, showPhone: g.showPhone };
+  const companions = g.companions ?? [];
+  return {
+    ...guestPublic(g),
+    phone: isPlaceholderPhone(g.phone) ? '' : g.phone,
+    showPhone: g.showPhone,
+    cpf: g.cpf,
+    companionCpfs: companions.map((_, i) => g.companionCpfs?.[i] ?? ''),
+    inviteLabel: g.inviteLabel,
+  };
 }
 
 export function photoDTO(p: Photo, messageId: number | null): PhotoDTO {

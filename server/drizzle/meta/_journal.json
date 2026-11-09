@@ -29,6 +29,13 @@
       "when": 1794253394034,
       "tag": "0003_combinados",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794264955256,
+      "tag": "0004_lista_confirmados",
+      "breakpoints": true
     }
   ]
 }

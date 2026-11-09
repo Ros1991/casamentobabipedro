@@ -35,6 +35,8 @@ export const config = {
     .map((p) => normalizePhone(p))
     .filter((p): p is string => !!p),
   telaoCode: (process.env.TELAO_CODE ?? '').trim(),
+  /** Token do script de importação da lista de confirmados. Vazio = importação desligada. */
+  importToken: (process.env.IMPORT_TOKEN ?? '').trim(),
   maxUploadBytes: Math.max(1, Number(process.env.MAX_UPLOAD_MB ?? 12)) * 1024 * 1024,
   publicUrl: (process.env.PUBLIC_URL ?? '').trim().replace(/\/$/, ''),
   /** Web Push (VAPID). Sem as duas chaves, os avisos ficam desligados. */

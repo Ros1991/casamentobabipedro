@@ -40,3 +40,29 @@ export function formatPhone(phone: string): string {
   }
   return '+' + phone;
 }
+
+/** Convidados importados sem telefone ganham um marcador único no lugar (a coluna é obrigatória e única). */
+const PLACEHOLDER_PREFIX = 'sem-';
+
+export function placeholderPhone(key: string): string {
+  return PLACEHOLDER_PREFIX + key;
+}
+
+export function isPlaceholderPhone(phone: string): boolean {
+  return phone.startsWith(PLACEHOLDER_PREFIX);
+}
+
+/**
+ * Formas equivalentes de um telefone para busca: no Brasil, o mesmo celular aparece com e sem o nono dígito
+ * ("5561999990000" e "556199990000").
+ */
+export function phoneVariants(phone: string): string[] {
+  const out = [phone];
+  if (phone.startsWith('55')) {
+    const ddd = phone.slice(2, 4);
+    const rest = phone.slice(4);
+    if (rest.length === 9 && rest.startsWith('9')) out.push('55' + ddd + rest.slice(1));
+    else if (rest.length === 8) out.push('55' + ddd + '9' + rest);
+  }
+  return out;
+}

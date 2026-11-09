@@ -270,6 +270,7 @@ Seguir o site oficial para o convidado sentir que é "o mesmo casamento":
 - Infra: Dockerfile, railway.json, workflow do GitHub Actions (build + deploy opcional via token), PWA (manifest e ícones).
 
 - **Agenda / Combinados** (09/11): combinados dos noivos (oficiais) e da galera, com Vou/Talvez/Não vou, contagem por pessoas (acompanhantes incluídos), destaque no Início, pino no mapa, telão, mensagem automática no mural, aviso push geral para os oficiais e CSV de confirmados no admin. "Quem chega quando" virou aba da Agenda.
+- **Lista de confirmados** (09/11, noite): importação da planilha dos noivos, entrada só com o WhatsApp (busca por nome como plano B), CPF opcional para o check-in, Guia do Convidado em PDF e ícone com o brasão.
 - Extras (09/11, tarde): botão "Apagar" evidente e moderação de fotos no admin; **app instalável** (service worker + convite de instalação; passo a passo no iPhone) e **avisos de novas mensagens** via Web Push (no iPhone só com o app instalado, regra da Apple), com aviso local quando o app está em segundo plano.
 
 **Deploy (09/11/2026):** código no GitHub (`Ros1991/casamentobabipedro`) e projeto `galera-babi-pedro` no Railway com serviço ligado ao repositório, volume em `/data`, variáveis e domínio <https://galera-production-e5fd.up.railway.app>. Configuração em `.railway/railway.ts` (o `railway.json` foi aposentado pelo Railway). Códigos do convite/telão e telefones de admin estão **provisórios**.

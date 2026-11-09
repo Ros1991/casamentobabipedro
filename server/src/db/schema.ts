@@ -37,6 +37,19 @@ export const guests = sqliteTable('guests', {
     .$type<string[]>()
     .notNull()
     .default(sql`'[]'`),
+  /** CPF (só dígitos), opcional: facilita o check-in. Nunca vai para os outros convidados. */
+  cpf: text('cpf'),
+  /** CPFs dos acompanhantes, na mesma ordem de companions ('' quando não informado) */
+  companionCpfs: text('companion_cpfs', { mode: 'json' })
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  /** Chave da linha na lista de confirmados importada (null para quem se cadastrou sozinho) */
+  importKey: text('import_key').unique(),
+  /** Nome do convite na lista importada (ex.: "Fulano e família") */
+  inviteLabel: text('invite_label'),
+  /** Quando a pessoa entrou no app pela primeira vez (null = só importada, ainda não entrou) */
+  claimedAt: integer('claimed_at'),
   createdAt: integer('created_at').notNull(),
   lastSeenAt: integer('last_seen_at').notNull(),
 });

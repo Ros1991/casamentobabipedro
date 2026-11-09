@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   Camera,
+  BookOpen,
   ExternalLink,
   Gift,
   Images,
@@ -9,7 +10,6 @@ import {
   MapPinned,
   MessageCircle,
   Navigation,
-  Plane,
   Shirt,
   ShieldCheck,
   Users,
@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { Countdown } from '../components/Countdown';
+import { CpfCard } from '../components/CpfCard';
 import { EventCard } from '../components/EventCard';
 import { InstallBanner } from '../components/InstallBanner';
 import { NotificationsCard } from '../components/NotificationsCard';
@@ -125,6 +126,22 @@ export function Home() {
       <div className="space-y-4 px-4 pt-4">
         <InstallBanner />
         <NotificationsCard dismissable />
+        <CpfCard />
+        <a
+          href={w.guideUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 rounded-3xl border border-gold/50 bg-white/70 p-4 shadow-soft"
+        >
+          <span className="rounded-full bg-gold/15 p-2.5 text-gold">
+            <BookOpen size={22} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-serif text-lg font-semibold text-terra-dark">Guia do Convidado</span>
+            <span className="block text-sm text-ink-soft">Dicas dos noivos para a estadia: alimentação, spa, passeios e mais (PDF).</span>
+          </span>
+          <ExternalLink size={16} className="text-terra" />
+        </a>
         {!hintDismissed && (
           <div className="flex items-start gap-3 rounded-3xl border border-sea bg-sea-light p-4 animate-fade-in">
             <span className="rounded-full bg-cream p-2 text-terra-dark">
@@ -304,12 +321,6 @@ export function Home() {
           <a href={w.instagramUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             <span className="flex items-center gap-1.5">
               <Instagram size={16} /> Instagram do casal
-            </span>
-            <ExternalLink size={16} />
-          </a>
-          <a href={w.travelAgency.url} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
-            <span className="flex items-center gap-1.5">
-              <Plane size={16} /> Hospedagem e transfer
             </span>
             <ExternalLink size={16} />
           </a>

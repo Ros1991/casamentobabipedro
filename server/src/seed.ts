@@ -45,7 +45,7 @@ export const PRESET_ACCOMMODATIONS = [
     lat: -3.9212,
     lng: -38.3285,
     instagram: null,
-    whatsapp: '5585997061907',
+    whatsapp: null,
     description: 'Resort com aptos de 2 e 3 quartos (Airbnb ou corretores) · 3 min a pé da festa',
     sortOrder: 2,
   },

@@ -18,6 +18,7 @@ import eventRoutes from './routes/events.js';
 import guestRoutes from './routes/guests.js';
 import messageRoutes from './routes/messages.js';
 import photoRoutes from './routes/photos.js';
+import importRoutes from './routes/import.js';
 import pushRoutes from './routes/push.js';
 import telaoRoutes from './routes/telao.js';
 import { seedAccommodations } from './seed.js';
@@ -90,6 +91,7 @@ async function main(): Promise<void> {
   await app.register(telaoRoutes);
   await app.register(eventRoutes);
   await app.register(pushRoutes);
+  await app.register(importRoutes);
   await app.register(adminRoutes);
   setupPush(app.log);
 

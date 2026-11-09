@@ -1,4 +1,4 @@
-/** Dados fixos do casamento (fonte: site oficial noivos.casar.com/babitos, em 09/11/2026). */
+/** Dados fixos do casamento (fonte: site oficial www.casoriobabitos.com.br, em 09/11/2026). */
 export const WEDDING = {
   couple: 'Pedro & Babi',
   shortCouple: 'Pedro & Babi',
@@ -11,12 +11,12 @@ export const WEDDING = {
   venueNote:
     'No complexo Aquiraz Riviera, de frente para a praia: cerca de 1h de Fortaleza e 10 min de carro da Praia do Presídio. A festa vai até as 23h. Quem não ficar perto deve combinar o transporte de volta com antecedência, porque Uber à noite na região é difícil.',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Beach+Club+Aquiraz+Riviera',
-  officialSite: 'https://noivos.casar.com/babitos',
+  officialSite: 'https://www.casoriobabitos.com.br',
   rsvpUrl: 'https://noivos.casar.com/babitos#rsvp',
   giftsUrl: 'https://noivos.casar.com/babitos#presentes',
   instagramUrl: 'https://www.instagram.com/casoriobabitos/',
-  /** Agência de turismo oficial do casal (hospedagem e transfer) */
-  travelAgency: { name: 'Conquistare Turismo (Lays Carvalho)', url: 'https://wa.me/message/JF7KAU5VD22JO1' },
+  /** Guia do Convidado (PDF dos noivos, servido pelo próprio site) */
+  guideUrl: '/guia-do-convidado.pdf',
   dressCode: 'Esporte fino',
   dressCodeDetails:
     'Casamento ao ar livre, de frente para a praia, com clima leve sem perder a elegância. Cerimônia e festa na grama, com vento moderado: se for de salto, prefira salto grosso, plataforma ou anabela.',

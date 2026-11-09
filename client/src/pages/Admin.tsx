@@ -223,10 +223,17 @@ export function Admin() {
                 </div>
                 {g.companions?.length > 0 && <div className="text-ink-soft">Com {g.companions.join(', ')}</div>}
                 <div className="text-ink-soft">
-                  <a href={whatsappLink(g.phone)} target="_blank" rel="noreferrer" className="underline">
-                    {g.phoneFormatted}
-                  </a>
-                  {g.showPhone ? '' : ' · oculto para os outros'}
+                  {g.phone ? (
+                    <>
+                      <a href={whatsappLink(g.phone)} target="_blank" rel="noreferrer" className="underline">
+                        {g.phoneFormatted}
+                      </a>
+                      {g.showPhone ? '' : ' · oculto para os outros'}
+                    </>
+                  ) : (
+                    'Sem telefone na lista'
+                  )}
+                  {!g.joined && ' · ainda não entrou no app'}
                 </div>
                 <div className="text-ink-soft">
                   {g.accommodation ? `${g.accommodation.name} (${g.accommodation.city})` : g.customPlaceLabel ? `${g.customPlaceLabel}${g.customCity && g.customCity !== 'Outro' ? ` (${g.customCity})` : ''}` : 'Hospedagem não informada'}

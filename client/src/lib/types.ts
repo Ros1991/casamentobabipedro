@@ -22,7 +22,7 @@ export interface Wedding {
   dressCodeDetails: string;
   verse: string;
   instagramUrl: string;
-  travelAgency: { name: string; url: string };
+  guideUrl: string;
   schedule: ScheduleItem[];
   mapCenter: { lat: number; lng: number };
   mapZoom: number;
@@ -71,13 +71,29 @@ export interface GuestPublic extends GuestLite {
   /** 1 + acompanhantes */
   partySize: number;
   isAdmin: boolean;
+  /** Já entrou no app (false = veio da lista de confirmados e ainda não entrou) */
+  joined: boolean;
   createdAt: number;
   lastSeenAt: number;
 }
 
 export interface GuestMe extends GuestPublic {
+  /** '' quando a pessoa veio da lista sem telefone */
   phone: string;
   showPhone: boolean;
+  cpf: string | null;
+  /** Alinhado com companions ('' quando não informado) */
+  companionCpfs: string[];
+  inviteLabel: string | null;
+}
+
+/** Resultado da busca pelo nome na lista de confirmados (tela de entrada). */
+export interface NameMatch {
+  guestId: string;
+  /** null = a própria pessoa; número = posição na lista de acompanhantes de alguém */
+  companionIndex: number | null;
+  name: string;
+  invite: string | null;
 }
 
 export interface Photo {
@@ -132,10 +148,12 @@ export interface EnterPayload extends StayInput {
   arrivalDate: string | null;
   departureDate: string | null;
   companions: string[];
+  companionCpfs?: string[];
+  cpf?: string;
   showPhone: boolean;
 }
 
-export const MAX_COMPANIONS = 4;
+export const MAX_COMPANIONS = 6;
 
 export type RsvpStatus = 'yes' | 'maybe' | 'no';
 

@@ -7,6 +7,7 @@ import { guestMe, guestPublic } from '../dto.js';
 import { ImageError, processAvatar, removeUpload } from '../images.js';
 import { broadcast, onlineGuestIds } from '../realtime.js';
 import { bool, str } from '../validate.js';
+import { normalizeCpf, parseCompanionCpfs } from '../cpf.js';
 import { isInputError, parseCompanions, parseDates, parseStay } from './guestInput.js';
 
 export default async function guestRoutes(app: FastifyInstance): Promise<void> {
@@ -47,6 +48,29 @@ export default async function guestRoutes(app: FastifyInstance): Promise<void> {
       const companions = parseCompanions(body.companions);
       if (isInputError(companions)) return reply.code(400).send(companions);
       patch.companions = companions;
+      // Sem CPFs no corpo: mantém os que já existiam para os nomes que continuam na lista
+      if (body.companionCpfs === undefined) {
+        const old = new Map((me.companions ?? []).map((n, i) => [n, me.companionCpfs?.[i] ?? '']));
+        patch.companionCpfs = companions.map((n) => old.get(n) ?? '');
+      }
+    }
+    if (body.companionCpfs !== undefined) {
+      const names = patch.companions ?? me.companions ?? [];
+      const { cpfs, invalid } = parseCompanionCpfs(body.companionCpfs, names.length);
+      if (invalid !== null) {
+        const who = names[invalid] || 'acompanhante';
+        return reply.code(400).send({ error: 'companionCpfs', message: `O CPF de ${who} não confere. Verifique os números.` });
+      }
+      patch.companionCpfs = cpfs;
+    }
+    if (body.cpf !== undefined) {
+      const raw = typeof body.cpf === 'string' ? body.cpf.trim() : '';
+      if (!raw) patch.cpf = null;
+      else {
+        const cpf = normalizeCpf(raw);
+        if (!cpf) return reply.code(400).send({ error: 'cpf', message: 'Seu CPF não confere. Verifique os números.' });
+        patch.cpf = cpf;
+      }
     }
 
     if (Object.keys(patch).length > 0) {

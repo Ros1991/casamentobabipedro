@@ -7,7 +7,8 @@ import { config } from '../config.js';
 import { db } from '../db/index.js';
 import { accommodations, guests, messages, photos } from '../db/schema.js';
 import { accommodationDTO, countPeople, guestPublic } from '../dto.js';
-import { formatPhone } from '../phone.js';
+import { formatCpf } from '../cpf.js';
+import { formatPhone, isPlaceholderPhone } from '../phone.js';
 import { onlineGuestIds } from '../realtime.js';
 import { WEDDING } from '../wedding.js';
 
@@ -75,8 +76,10 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     return {
       guests: rows.map((r) => ({
         ...guestPublic(r.guest),
-        phone: r.guest.phone,
-        phoneFormatted: formatPhone(r.guest.phone),
+        phone: isPlaceholderPhone(r.guest.phone) ? '' : r.guest.phone,
+        phoneFormatted: isPlaceholderPhone(r.guest.phone) ? '' : formatPhone(r.guest.phone),
+        cpf: r.guest.cpf,
+        inviteLabel: r.guest.inviteLabel,
         showPhone: r.guest.showPhone,
         accommodation: r.accommodation ? accommodationDTO(r.accommodation) : null,
       })),
@@ -94,8 +97,12 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     const header = [
       'Nome',
       'WhatsApp',
+      'CPF',
       'Acompanhantes',
+      'CPF dos acompanhantes',
       'Pessoas',
+      'Convite',
+      'Entrou no app',
       'Hospedagem',
       'Cidade',
       'Chegada',
@@ -112,9 +119,16 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
       lines.push(
         [
           g.name,
-          formatPhone(g.phone),
+          isPlaceholderPhone(g.phone) ? '' : formatPhone(g.phone),
+          g.cpf ? formatCpf(g.cpf) : '',
           companions.join(', '),
+          companions
+            .map((n, i) => (g.companionCpfs?.[i] ? `${n}: ${formatCpf(g.companionCpfs[i])}` : ''))
+            .filter(Boolean)
+            .join(', '),
           1 + companions.length,
+          g.inviteLabel ?? '',
+          g.claimedAt ? 'sim' : 'não',
           place,
           city,
           g.arrivalDate ?? '',

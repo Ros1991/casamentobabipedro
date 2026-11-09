@@ -29,7 +29,26 @@ export interface ProfilePatch extends Partial<StayInput> {
   arrivalDate?: string | null;
   departureDate?: string | null;
   companions?: string[];
+  companionCpfs?: string[];
+  cpf?: string;
   showPhone?: boolean;
+}
+
+interface LookupResponse extends Partial<MeResponse> {
+  found: boolean;
+  firstTime?: boolean;
+  needsDetails?: boolean;
+}
+
+/** Resultado de entrar pelo telefone ou pelo nome. */
+export type EntryResult = { found: false } | { found: true; name: string; firstTime: boolean; needsDetails: boolean };
+
+export interface ClaimPayload {
+  phone: string;
+  inviteCode: string;
+  guestId: string;
+  companionIndex: number | null;
+  name: string;
 }
 
 interface State {
@@ -61,6 +80,13 @@ interface State {
   loadConfig: () => Promise<AppConfig>;
   loadMe: () => Promise<void>;
   enter: (payload: EnterPayload) => Promise<{ returning: boolean }>;
+  /** Etapa 1 da entrada: só o telefone. Se achar, já deixa logado. */
+  lookup: (phone: string) => Promise<EntryResult>;
+  /** A pessoa se achou pelo nome na lista: guarda o telefone e entra. */
+  claim: (payload: ClaimPayload) => Promise<Extract<EntryResult, { found: true }>>;
+  /** Logou pela lista mas ainda falta dizer onde fica/quando chega (etapa 2 da entrada) */
+  pendingDetails: boolean;
+  finishDetails: () => void;
   logout: () => Promise<void>;
   updateMe: (patch: ProfilePatch) => Promise<void>;
   uploadAvatar: (file: Blob) => Promise<void>;
@@ -127,6 +153,7 @@ function upsertEvent(list: EventItem[], e: EventItem): EventItem[] {
 export const useStore = create<State>((set, get) => ({
   config: null,
   authStatus: 'loading',
+  pendingDetails: false,
   me: null,
   isAdmin: false,
 
@@ -189,6 +216,26 @@ export const useStore = create<State>((set, get) => ({
     return { returning: res.returning };
   },
 
+  async lookup(phone) {
+    const res = await api<LookupResponse>('/api/auth/lookup', { method: 'POST', json: { phone } });
+    if (!res.found || !res.guest) return { found: false };
+    set({ me: res.guest, isAdmin: !!res.isAdmin, pendingDetails: !!res.needsDetails, authStatus: 'authed' });
+    get().connectSocket();
+    return { found: true, name: res.guest.name, firstTime: !!res.firstTime, needsDetails: !!res.needsDetails };
+  },
+
+  async claim(payload) {
+    const res = await api<LookupResponse>('/api/auth/claim', { method: 'POST', json: payload });
+    if (!res.guest) throw new Error('Não foi possível entrar. Tente de novo.');
+    set({ me: res.guest, isAdmin: !!res.isAdmin, pendingDetails: !!res.needsDetails, authStatus: 'authed' });
+    get().connectSocket();
+    return { found: true, name: res.guest.name, firstTime: !!res.firstTime, needsDetails: !!res.needsDetails };
+  },
+
+  finishDetails() {
+    set({ pendingDetails: false });
+  },
+
   async logout() {
     try {
       await unsubscribePush();
@@ -198,6 +245,7 @@ export const useStore = create<State>((set, get) => ({
       set({
         me: null,
         isAdmin: false,
+        pendingDetails: false,
         authStatus: 'anon',
         messages: [],
         messagesLoaded: false,

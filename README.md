@@ -4,6 +4,13 @@ Rede social do casamento (19/11/2026, Beach Club Aquiraz Riviera, Aquiraz/CE): q
 
 Clone do site feito para o casamento de Anna Carolina & Fernando ([Ros1991/casamentocarolfernando](https://github.com/Ros1991/casamentocarolfernando)), com os dados, as hospedagens e a identidade visual (coqueiros, terracota, Cinzel) do site oficial <https://noivos.casar.com/babitos>. O plano completo e as decisões estão em [PLANO.md](PLANO.md).
 
+## Lista de confirmados e entrada em 2 etapas
+
+- A lista dos noivos (planilha `.xlsx`, que **não** fica no repositório) é importada com `IMPORT_TOKEN=... node scripts/importar-lista.mjs <planilha> <url> [--dry]`. Só entram as linhas "Confirmado". Telefones em qualquer formato são padronizados; quem tem telefone próprio vira convidado e o resto do convite entra como acompanhante. Hospedagem, datas, CPF e as respostas do formulário (pagode, sábado) vêm junto, e os combinados da programação já nascem com as presenças.
+- Rodar de novo atualiza só quem ainda não entrou no app; quem saiu da planilha e nunca entrou é removido.
+- Na entrada a pessoa digita só o WhatsApp. Achou: entra direto (casa com ou sem o nono dígito). Não achou: procura o próprio nome (a busca mostra só nome e convite) e o telefone fica salvo. Não está na lista: cadastro completo. A segunda etapa (hospedagem, datas, acompanhantes) só aparece para quem ainda não tinha respondido.
+- CPF é opcional (convidado e acompanhantes), pedido no Início até ser preenchido, visível só no CSV do admin: serve para o check-in.
+
 ## Stack
 
 - **Client:** React 19 + Vite 7 + TypeScript + Tailwind 4, Leaflet (OpenStreetMap), Socket.IO client, Zustand. PWA (manifest + ícones).

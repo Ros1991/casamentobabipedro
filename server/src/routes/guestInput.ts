@@ -72,7 +72,7 @@ export function parseDates(body: Record<string, unknown>): DateFields | InputErr
   return { arrivalDate, departureDate };
 }
 
-export const MAX_COMPANIONS = 4;
+export const MAX_COMPANIONS = 6;
 
 /** Lista de acompanhantes: nomes curtos, até MAX_COMPANIONS; entradas vazias viram "Acompanhante". */
 export function parseCompanions(value: unknown): string[] | InputError {
