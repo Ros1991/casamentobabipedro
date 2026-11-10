@@ -252,7 +252,7 @@ export function Mural() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-2">
+      <div ref={listRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-3 pb-2">
         {hasMore && (
           <div className="mb-3 text-center">
             <button
@@ -292,7 +292,7 @@ export function Mural() {
                 <div className="w-8 shrink-0">
                   {!grouped && !mine && <Avatar guest={m.guest} size={32} online={online.includes(m.guestId)} />}
                 </div>
-                <div className={`group relative max-w-[78%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
+                <div className={`group relative max-w-[78%] min-w-0 ${mine ? 'items-end' : 'items-start'} flex flex-col`}>
                   {!grouped && !mine && <div className="mb-0.5 ml-1 text-xs font-semibold text-terra">{m.guest.name}</div>}
                   <MessageBubble
                     message={m}
@@ -389,9 +389,9 @@ export function Mural() {
           <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-2xl border-l-4 border-terra bg-terra-pale px-3 py-2">
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-terra-dark">Respondendo a {replyingTo.guest.id === me?.id ? 'você' : replyingTo.guest.name}</div>
-              <div className="flex items-center gap-1 truncate text-sm text-ink-soft">
+              <div className="flex min-w-0 items-center gap-1 text-sm text-ink-soft">
                 {replyingTo.photo && <Camera size={13} className="shrink-0" />}
-                <span className="truncate">{replyingTo.text ?? (replyingTo.photo ? 'Foto' : '')}</span>
+                <span className="min-w-0 truncate">{replyingTo.text ?? (replyingTo.photo ? 'Foto' : '')}</span>
               </div>
             </div>
             <button type="button" onClick={() => setReplyingTo(null)} className="rounded-full p-1.5 text-ink-soft hover:bg-cream" aria-label="Cancelar resposta">
@@ -490,7 +490,7 @@ function MessageBubble({
     // Com foto, o balão tem largura fixa e a foto ocupa tudo: a legenda quebra dentro dessa largura,
     // em vez de alargar o balão e deixar um vazio ao lado da foto.
     <div
-      className={`overflow-hidden rounded-2xl shadow-soft transition-shadow ${base} ${message.pending ? 'opacity-70' : ''} ${message.photo ? 'w-[300px] max-w-full' : ''} ${
+      className={`overflow-hidden rounded-2xl shadow-soft transition-shadow ${base} ${message.pending ? 'opacity-70' : ''} ${message.photo ? 'w-[300px]' : ''} max-w-full ${message.replyTo && !message.photo ? 'min-w-[190px]' : ''} ${
         highlight ? 'ring-4 ring-gold' : mentionsMe ? 'ring-2 ring-gold' : ''
       }`}
     >
@@ -509,7 +509,7 @@ function MessageBubble({
         </button>
       )}
       {message.text && (
-        <p className="px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap">{renderText(message.text, names, meId, mine)}</p>
+        <p className="px-3.5 py-2 text-[15px] leading-snug break-words whitespace-pre-wrap [overflow-wrap:anywhere]">{renderText(message.text, names, meId, mine)}</p>
       )}
     </div>
   );
@@ -521,7 +521,8 @@ function ReplyQuote({ reply, mine, meId, onJump }: { reply: ReplyPreview; mine: 
     <button
       type="button"
       onClick={() => onJump(reply.id)}
-      className={`m-1.5 mb-0 flex w-[calc(100%-0.75rem)] items-center gap-2 rounded-xl border-l-4 px-2.5 py-1.5 text-left ${
+      // w-0 + min-w: a citação acompanha a largura do balão em vez de alargá-lo; o texto corta com reticências
+      className={`m-1.5 mb-0 flex w-0 min-w-[calc(100%-0.75rem)] items-center gap-2 overflow-hidden rounded-xl border-l-4 px-2.5 py-1.5 text-left ${
         mine ? 'border-cream/70 bg-white/15' : 'border-terra bg-terra-pale'
       }`}
     >
@@ -529,9 +530,9 @@ function ReplyQuote({ reply, mine, meId, onJump }: { reply: ReplyPreview; mine: 
         <span className={`block truncate text-xs font-bold ${mine ? 'text-cream' : 'text-terra-dark'}`}>
           {reply.guestId === meId ? 'Você' : reply.guestName}
         </span>
-        <span className={`flex items-center gap-1 text-xs ${mine ? 'text-cream/80' : 'text-ink-soft'}`}>
+        <span className={`flex min-w-0 items-center gap-1 text-xs ${mine ? 'text-cream/80' : 'text-ink-soft'}`}>
           {reply.thumbUrl && <Camera size={12} className="shrink-0" />}
-          <span className="truncate">{reply.deleted ? 'Mensagem apagada' : (reply.text ?? (reply.thumbUrl ? 'Foto' : ''))}</span>
+          <span className="min-w-0 truncate">{reply.deleted ? 'Mensagem apagada' : (reply.text ?? (reply.thumbUrl ? 'Foto' : ''))}</span>
         </span>
       </span>
       {reply.thumbUrl && <img src={reply.thumbUrl} alt="" className="size-9 shrink-0 rounded-md object-cover" />}
