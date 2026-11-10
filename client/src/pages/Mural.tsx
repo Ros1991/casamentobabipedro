@@ -1,4 +1,4 @@
-import { ArrowDown, Camera, Reply, SendHorizonal, Trash2, X } from 'lucide-react';
+import { ArrowDown, Camera, Reply, SendHorizonal, Smile, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Avatar } from '../components/Avatar';
 import { PhotoCapture } from '../components/PhotoCapture';
@@ -11,6 +11,14 @@ import type { GuestPublic, Message, Photo, ReplyPreview } from '../lib/types';
 import { useStore } from '../store';
 
 const GROUP_WINDOW = 3 * 60 * 1000;
+
+/** Emojis oferecidos no botão ao lado do campo de texto (festa, praia e reações) */
+const EMOJIS = [
+  '😀', '😂', '🥹', '😍', '🥰', '😘', '😎', '🤩', '🥳', '😅', '😭', '🙈',
+  '❤️', '💛', '🤍', '💍', '👰', '🤵', '💐', '🥂', '🍾', '🍻', '🎉', '✨',
+  '👏', '🙌', '🙏', '👍', '💃', '🕺', '🎶', '🔥', '🌴', '🌊', '☀️', '🏖️',
+  '🥥', '🍹', '🦀', '✈️', '🚗', '📸', '👀', '🤣', '😴', '🤪', '💪', '🫶',
+];
 
 /** Minúsculas e sem acentos, para achar nomes ao digitar @ */
 const fold = (s: string) =>
@@ -73,6 +81,7 @@ export function Mural() {
   /** Pessoas escolhidas na lista do @ nesta mensagem */
   const [picked, setPicked] = useState<{ id: string; name: string }[]>([]);
   const [flash, setFlash] = useState<number | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [nearBottom, setNearBottom] = useState(true);
   const [newBelow, setNewBelow] = useState(0);
@@ -135,6 +144,7 @@ export function Mural() {
     setText('');
     setReplyingTo(null);
     setPicked([]);
+    setEmojiOpen(false);
     try {
       await sendMessage(value, { replyTo, mentions });
     } catch (err) {
@@ -199,6 +209,21 @@ export function Mural() {
     requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.setSelectionRange(pos, pos);
+      setCaret(pos);
+    });
+  };
+
+  /** Coloca o emoji onde o cursor está e mantém o teclado aberto. */
+  const insertEmoji = (emoji: string) => {
+    const el = inputRef.current;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    const next = (text.slice(0, start) + emoji + text.slice(end)).slice(0, 2000);
+    const pos = Math.min(next.length, start + emoji.length);
+    setText(next);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(pos, pos);
       setCaret(pos);
     });
   };
@@ -367,8 +392,35 @@ export function Mural() {
             </button>
           </div>
         )}
+        {emojiOpen && (
+          <div className="mx-1 mb-1.5 grid max-h-44 grid-cols-8 gap-0.5 overflow-y-auto rounded-2xl border border-sand bg-white p-2 shadow-soft sm:grid-cols-12" aria-label="Emojis">
+            {EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                // não tira o foco do campo de texto
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={() => insertEmoji(emoji)}
+                className="flex aspect-square items-center justify-center rounded-lg text-2xl leading-none hover:bg-terra-pale active:scale-90"
+                aria-label={`Inserir ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex items-end gap-1">
           <PhotoCapture variant="icon" />
+          <button
+            type="button"
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => setEmojiOpen((v) => !v)}
+            className={`flex size-11 shrink-0 items-center justify-center rounded-full transition ${emojiOpen ? 'bg-terra-pale text-terra-dark' : 'text-terra hover:bg-cream-dark'}`}
+            aria-label={emojiOpen ? 'Fechar emojis' : 'Abrir emojis'}
+            aria-expanded={emojiOpen}
+          >
+            <Smile size={22} />
+          </button>
           <textarea
             ref={inputRef}
             value={text}
