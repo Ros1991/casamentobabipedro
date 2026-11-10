@@ -1,9 +1,7 @@
 import {
   CalendarDays,
-  Camera,
   BookOpen,
   ExternalLink,
-  Gift,
   Images,
   Instagram,
   LocateFixed,
@@ -18,6 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
 import { Countdown } from '../components/Countdown';
+import { GiftsCard } from '../components/GiftsCard';
 import { CpfCard } from '../components/CpfCard';
 import { EventCard } from '../components/EventCard';
 import { InstallBanner } from '../components/InstallBanner';
@@ -310,18 +309,14 @@ export function Home() {
           </div>
         )}
 
+        <GiftsCard />
+
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <a href={w.officialSite} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             Site oficial <ExternalLink size={16} />
           </a>
           <a href={w.rsvpUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             Confirmar presença <ExternalLink size={16} />
-          </a>
-          <a href={w.giftsUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
-            <span className="flex items-center gap-1.5">
-              <Gift size={16} /> Lista de presentes
-            </span>
-            <ExternalLink size={16} />
           </a>
           <a href={w.instagramUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             <span className="flex items-center gap-1.5">
@@ -334,9 +329,6 @@ export function Home() {
         <div className="flex flex-wrap gap-2">
           <Link to="/fotos" className="flex items-center gap-1.5 rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-terra-dark">
             <Images size={14} /> Galeria
-          </Link>
-          <Link to="/telao" className="flex items-center gap-1.5 rounded-full border border-sand px-3 py-1.5 text-xs font-semibold text-terra-dark">
-            <Camera size={14} /> Telão da festa
           </Link>
           {isAdmin && (
             <Link to="/admin" className="flex items-center gap-1.5 rounded-full border border-terra bg-terra-pale px-3 py-1.5 text-xs font-semibold text-terra-dark">

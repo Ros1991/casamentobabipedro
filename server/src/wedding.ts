@@ -13,7 +13,9 @@ export const WEDDING = {
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Beach+Club+Aquiraz+Riviera',
   officialSite: 'https://www.casoriobabitos.com.br',
   rsvpUrl: 'https://noivos.casar.com/babitos#rsvp',
-  giftsUrl: 'https://noivos.casar.com/babitos#presentes',
+  giftsUrl: 'https://casoriobabitos.com.br/#/presentes',
+  /** Chave Pix dos noivos (e-mail), para quem preferir presentear assim */
+  pixKey: 'babicoelhocintra@gmail.com',
   instagramUrl: 'https://www.instagram.com/casoriobabitos/',
   /** Guia do Convidado (PDF dos noivos, servido pelo próprio site) */
   guideUrl: '/guia-do-convidado.pdf',

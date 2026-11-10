@@ -273,6 +273,8 @@ Seguir o site oficial para o convidado sentir que é "o mesmo casamento":
 - **Lista de confirmados** (09/11, noite): importação da planilha dos noivos, entrada só com o WhatsApp (busca por nome como plano B), CPF opcional para o check-in, Guia do Convidado em PDF e ícone com o brasão.
 - Extras (09/11, tarde): botão "Apagar" evidente e moderação de fotos no admin; **app instalável** (service worker + convite de instalação; passo a passo no iPhone) e **avisos de novas mensagens** via Web Push (no iPhone só com o app instalado, regra da Apple), com aviso local quando o app está em segundo plano.
 
+**Telão removido (10/11/2026):** os noivos decidiram não ter telão na festa; a tela `/telao`, o código e os links saíram do app.
+
 **Deploy (09/11/2026):** código no GitHub (`Ros1991/casamentobabipedro`) e projeto `galera-babi-pedro` no Railway com serviço ligado ao repositório, volume em `/data`, variáveis e domínio <https://babitos.com.br>. Configuração em `.railway/railway.ts` (o `railway.json` foi aposentado pelo Railway). Códigos do convite/telão e telefones de admin estão **provisórios**.
 
 ## 14. Próximos passos

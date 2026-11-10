@@ -69,7 +69,6 @@ export default async function authRoutes(app: FastifyInstance): Promise<void> {
   /** Dados públicos: se exige código, infos do casamento e hospedagens (para a tela de entrada). */
   app.get('/api/config', async () => ({
     inviteRequired: !!config.inviteCode,
-    telaoEnabled: !!config.telaoCode,
     wedding: WEDDING,
     map: { tileUrl: config.mapTileUrl, attribution: config.mapTileAttribution },
     push: { enabled: pushEnabled, publicKey: pushEnabled ? config.vapidPublicKey : null },

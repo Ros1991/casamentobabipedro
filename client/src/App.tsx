@@ -10,7 +10,6 @@ import { Home } from './pages/Home';
 import { Mapa } from './pages/Mapa';
 import { Mural } from './pages/Mural';
 import { Perfil } from './pages/Perfil';
-import { Telao } from './pages/Telao';
 
 export default function App() {
   return (
@@ -18,7 +17,6 @@ export default function App() {
       <Toasts />
       <Routes>
         <Route path="/entrar" element={<Enter />} />
-        <Route path="/telao" element={<Telao />} />
         <Route element={<RequireAuth />}>
           <Route element={<Layout />}>
             <Route index element={<Home />} />

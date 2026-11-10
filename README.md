@@ -22,7 +22,7 @@ Clone do site feito para o casamento de Anna Carolina & Fernando ([Ros1991/casam
 
 ```bash
 npm install
-cp .env.example .env   # ajuste INVITE_CODE, ADMIN_PHONES, TELAO_CODE
+cp .env.example .env   # ajuste ADMIN_PHONES
 npm run dev            # server em :3000 e client (Vite) em :5173 (mude PORT e CLIENT_PORT no .env se as portas estiverem ocupadas)
 ```
 
@@ -46,7 +46,6 @@ npm run icons          # regenera os ícones do PWA a partir de client/public/br
 | `SESSION_SECRET` | **sim em produção** | Frase longa e aleatória que assina os cookies |
 | `INVITE_CODE` | não | Código que os convidados digitam na entrada. **Está vazio (sem código)** por decisão dos noivos; defina uma palavra para passar a exigir |
 | `ADMIN_PHONES` | recomendado | Telefones (só dígitos, com 55) com acesso ao `/admin`, separados por vírgula |
-| `TELAO_CODE` | recomendado | Código para abrir `/telao` sem login |
 | `MAX_UPLOAD_MB` | não | Limite por foto (padrão 12) |
 | `PUBLIC_URL` | recomendado | URL pública (usada no QR code do telão) |
 | `MAP_TILE_URL` / `MAP_TILE_ATTRIBUTION` | não | Troca o provedor de tiles do mapa (padrão OpenStreetMap) |
@@ -71,7 +70,7 @@ O projeto já está no ar: **projeto `galera-babi-pedro`**, serviço **`galera`*
 - URL oficial: <https://babitos.com.br> (também `www.babitos.com.br`; o endereço <https://galera-production-e5fd.up.railway.app> continua funcionando). O domínio foi registrado no Registro.br com DNS no Cloudflare: dois CNAME em modo "DNS only" (raiz e `www`) e dois TXT `_railway-verify` pedidos pelo Railway.
 - Região `us-east4` (Virgínia, a de menor latência para o Brasil entre as disponíveis).
 - Volume `galera-data` montado em `/data` (banco `galera.db` + `uploads/`).
-- Variáveis cadastradas no serviço (ver tabela acima). `INVITE_CODE`, `ADMIN_PHONES` e `TELAO_CODE` são provisórios e podem ser trocados no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.
+- Variáveis cadastradas no serviço (ver tabela acima). `ADMIN_PHONES` pode ser trocados no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.
 
 ### Infraestrutura como código (`.railway/railway.ts`)
 
@@ -106,7 +105,6 @@ railway config apply        # aplica (pede confirmação)
 | `/fotos` | Galeria |
 | `/agenda` | Combinados (dos noivos e da galera) com confirmação de presença; aba "Quem chega quando" |
 | `/perfil` | Editar dados, foto de perfil, sair |
-| `/telao` | Slideshow em tela cheia para a festa (código do telão ou login) |
 | `/admin` | Estatísticas, lista de convidados, CSV e ZIP (só `ADMIN_PHONES`) |
 
 ## Estrutura
@@ -118,7 +116,7 @@ client/           React + Vite
   src/lib/        api, socket, geo (GPS/EXIF), image (compressão), offlineQueue, format
   src/store.ts    estado global (Zustand) + eventos do Socket.IO
 server/           Fastify + Socket.IO
-  src/routes/     auth, guests, messages, photos, telao, admin
+  src/routes/     auth, guests, messages, photos, events, push, import, admin
   src/db/         schema Drizzle + conexão SQLite
   drizzle/        migrações SQL geradas
 scripts/          make-icons.mjs

@@ -20,7 +20,6 @@ import messageRoutes from './routes/messages.js';
 import photoRoutes from './routes/photos.js';
 import importRoutes from './routes/import.js';
 import pushRoutes from './routes/push.js';
-import telaoRoutes from './routes/telao.js';
 import { seedAccommodations } from './seed.js';
 
 const LAST_SEEN_INTERVAL = 2 * 60 * 1000;
@@ -88,7 +87,6 @@ async function main(): Promise<void> {
   await app.register(guestRoutes);
   await app.register(messageRoutes);
   await app.register(photoRoutes);
-  await app.register(telaoRoutes);
   await app.register(eventRoutes);
   await app.register(pushRoutes);
   await app.register(importRoutes);

@@ -35,7 +35,6 @@ export default defineRailway(() => {
       // Sem INVITE_CODE: entrada sem código, a pedido dos noivos (menos barreira). Para exigir, declare aqui e no Railway.
       IMPORT_TOKEN: preserve(),
       ADMIN_PHONES: preserve(),
-      TELAO_CODE: preserve(),
       VAPID_PUBLIC_KEY: preserve(),
       VAPID_PRIVATE_KEY: preserve(),
     },

@@ -18,6 +18,7 @@ export interface Wedding {
   officialSite: string;
   rsvpUrl: string;
   giftsUrl: string;
+  pixKey: string;
   dressCode: string;
   dressCodeDetails: string;
   verse: string;
@@ -44,7 +45,6 @@ export interface Accommodation {
 
 export interface AppConfig {
   inviteRequired: boolean;
-  telaoEnabled: boolean;
   wedding: Wedding;
   map: { tileUrl: string; attribution: string };
   push: { enabled: boolean; publicKey: string | null };
