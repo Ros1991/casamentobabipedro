@@ -9,7 +9,7 @@ interface GuestLite {
 
 const ROOM = 'galera';
 let io: Server | null = null;
-/** guestId → número de conexões abertas */
+/** guestId → número de conexões com o app na tela (abas/aparelhos em segundo plano não contam) */
 const online = new Map<string, number>();
 
 export function setupRealtime(app: FastifyInstance): void {
@@ -34,24 +34,28 @@ export function setupRealtime(app: FastifyInstance): void {
     const guest = socket.data.guest as GuestLite | null;
     socket.join(ROOM);
 
-    if (guest) {
-      online.set(guest.id, (online.get(guest.id) ?? 0) + 1);
+    // "Online" = com o app aberto na tela agora. O app avisa quando vai para segundo plano
+    // (trocou de app, bloqueou o celular, mudou de aba) e quando volta.
+    let active = false;
+    const setActive = (value: boolean) => {
+      if (!guest || value === active) return;
+      active = value;
+      const n = (online.get(guest.id) ?? 0) + (value ? 1 : -1);
+      if (n <= 0) online.delete(guest.id);
+      else online.set(guest.id, n);
       broadcastPresence();
-    } else {
-      socket.emit('presence', presencePayload());
-    }
+    };
+
+    if (guest) setActive(true);
+    else socket.emit('presence', presencePayload());
+
+    socket.on('presence:active', (value: unknown) => setActive(value === true));
 
     socket.on('typing', () => {
       if (guest) socket.to(ROOM).emit('typing', { guestId: guest.id, name: guest.name });
     });
 
-    socket.on('disconnect', () => {
-      if (!guest) return;
-      const n = (online.get(guest.id) ?? 1) - 1;
-      if (n <= 0) online.delete(guest.id);
-      else online.set(guest.id, n);
-      broadcastPresence();
-    });
+    socket.on('disconnect', () => setActive(false));
   });
 
   app.addHook('onClose', async () => {

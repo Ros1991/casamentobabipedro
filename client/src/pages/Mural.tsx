@@ -83,11 +83,12 @@ export function Mural() {
   const [flash, setFlash] = useState<number | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
-  const [nearBottom, setNearBottom] = useState(true);
   const [newBelow, setNewBelow] = useState(0);
   const [viewer, setViewer] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-  const lastCount = useRef(0);
+  /** Última mensagem já tratada pela rolagem automática (id) e se a pessoa está perto do fim */
+  const lastSeenId = useRef<number | null>(null);
+  const nearBottomRef = useRef(true);
 
   useEffect(() => {
     if (!messagesLoaded) void loadMessages().catch((err) => toast.error(errorMessage(err)));
@@ -101,26 +102,31 @@ export function Mural() {
     setNewBelow(0);
   }, []);
 
-  // Rola para o fim ao carregar e quando chegam mensagens (se já estava perto do fim)
+  // Rola para o fim só em dois casos: ao abrir o mural e quando chega mensagem NOVA no fim da lista
+  // (se a pessoa já estava perto do fim, ou se a mensagem é dela). Rolar para cima, reações e
+  // mensagens antigas carregadas não puxam a tela de volta para baixo.
   useEffect(() => {
     if (!messagesLoaded) return;
-    const grew = messages.length > lastCount.current;
     const last = messages[messages.length - 1];
-    const mine = last && last.guestId === me?.id;
-    if (lastCount.current === 0 || nearBottom || mine) {
-      requestAnimationFrame(() => scrollToBottom(lastCount.current !== 0));
-    } else if (grew) {
-      setNewBelow((n) => n + (messages.length - lastCount.current));
+    const lastId = last?.id ?? null;
+    const first = lastSeenId.current === null;
+    const isNew = lastId !== null && lastId !== lastSeenId.current && (first || lastId > (lastSeenId.current ?? 0));
+    if (first) {
+      requestAnimationFrame(() => scrollToBottom(false));
+    } else if (isNew) {
+      if (nearBottomRef.current || last.guestId === me?.id) requestAnimationFrame(() => scrollToBottom(true));
+      else setNewBelow((n) => n + 1);
     }
-    lastCount.current = messages.length;
-  }, [messages, messagesLoaded, nearBottom, me?.id, scrollToBottom]);
+    if (lastId !== null) lastSeenId.current = lastId;
+    else if (first) lastSeenId.current = 0;
+  }, [messages, messagesLoaded, me?.id, scrollToBottom]);
 
   const onScroll = () => {
     const el = listRef.current;
     if (!el) return;
     const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
     const near = dist < 120;
-    setNearBottom(near);
+    nearBottomRef.current = near;
     if (near) setNewBelow(0);
   };
 
@@ -297,7 +303,8 @@ export function Mural() {
                     onJump={jumpTo}
                     onOpenPhoto={openPhoto}
                     onImageLoad={() => {
-                      if (nearBottom) scrollToBottom();
+                      // foto terminou de carregar e empurrou a lista: acompanha só se a pessoa está no fim
+                      if (nearBottomRef.current) scrollToBottom();
                     }}
                   />
                   <div className={`mt-1 flex items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
@@ -431,7 +438,7 @@ export function Mural() {
             }}
             onSelect={(e) => setCaret(e.currentTarget.selectionStart ?? 0)}
             onKeyDown={onKey}
-            placeholder="Mensagem para a galera… (@ marca alguém)"
+            placeholder="Mensagem para a galera…"
             rows={1}
             maxLength={2000}
             className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-sand bg-white/80 px-4 py-2.5 text-[15px] text-ink outline-none focus:border-terra"

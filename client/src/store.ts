@@ -425,8 +425,15 @@ export const useStore = create<State>((set, get) => ({
     if (!handlersBound) {
       handlersBound = true;
 
+      // "Online" só conta quem está com o app na tela: avisa o servidor ao ir para segundo plano e ao voltar
+      const reportActive = () => socket.emit('presence:active', document.visibilityState === 'visible');
+      document.addEventListener('visibilitychange', () => {
+        if (socket.connected) reportActive();
+      });
+
       socket.on('connect', () => {
         set({ socketConnected: true });
+        reportActive();
         void get().refreshAll();
       });
       socket.on('disconnect', () => set({ socketConnected: false }));
