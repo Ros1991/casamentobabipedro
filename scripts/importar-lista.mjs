@@ -182,8 +182,14 @@ function answersOf(p) {
 //   { "Fulana de Tal": { "chegada": "2026-11-13", "saida": "2026-11-21", "contaPropria": true } }
 // "contaPropria" tira a pessoa da lista de acompanhantes e dá a ela uma conta separada (com as datas dela).
 const overridesFile = path.resolve(import.meta.dirname, '../data/ajustes-lista.json');
+const overridesRaw = fs.existsSync(overridesFile) ? JSON.parse(fs.readFileSync(overridesFile, 'utf8')) : {};
+// "_adicionar": pessoas que não estão na planilha (ex.: cerimonial), cada uma com conta própria:
+//   [{ "nome": "Fulana", "telefone": "+55 85 99999-9999", "chegada": "2026-11-19", "saida": "2026-11-19", "hospedagem": "Mora em Fortaleza" }]
+const extras = Array.isArray(overridesRaw._adicionar) ? overridesRaw._adicionar : [];
 const overrides = new Map(
-  Object.entries(fs.existsSync(overridesFile) ? JSON.parse(fs.readFileSync(overridesFile, 'utf8')) : {}).map(([name, o]) => [fold(name), o]),
+  Object.entries(overridesRaw)
+    .filter(([name]) => !name.startsWith('_'))
+    .map(([name, o]) => [fold(name), o]),
 );
 const usedOverrides = new Set();
 
@@ -234,6 +240,28 @@ for (const r of rows.slice(headerIndex + 1)) {
     sabadoNoite: cell(r, C.sabadoNoite),
   });
 }
+
+// Pessoas extras (fora da planilha)
+for (const x of extras) {
+  if (!x?.nome) continue;
+  if (people.some((p) => fold(p.name) === fold(x.nome))) continue; // já está na planilha
+  people.push({
+    separate: false,
+    name: x.nome,
+    invite: x.convite || x.nome,
+    phone: normalizePhone('', x.telefone ?? ''),
+    rawPhone: x.telefone ?? '',
+    adult: true,
+    cpf: x.cpf ?? '',
+    arrival: toDate(x.chegada ?? ''),
+    departure: toDate(x.saida ?? ''),
+    stay: stayOf(x.hospedagem ?? ''),
+    pagode: '',
+    sabadoDia: '',
+    sabadoNoite: '',
+  });
+}
+if (extras.length) console.log(`Pessoas extras (fora da planilha): ${extras.length}`);
 
 // ---------- pessoas → contas (quem tem telefone próprio) + acompanhantes ----------
 const MAX_COMPANIONS = 6;
