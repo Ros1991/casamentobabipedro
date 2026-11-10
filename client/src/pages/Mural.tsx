@@ -273,14 +273,19 @@ function MessageBubble({
 }) {
   const base = mine ? 'bg-terra-dark text-cream rounded-br-md' : 'bg-white text-ink rounded-bl-md border border-sand';
   return (
-    <div className={`overflow-hidden rounded-2xl shadow-soft ${base} ${message.pending ? 'opacity-70' : ''}`}>
+    // Com foto, o balão tem largura fixa e a foto ocupa tudo: a legenda quebra dentro dessa largura,
+    // em vez de alargar o balão e deixar um vazio ao lado da foto.
+    <div
+      className={`overflow-hidden rounded-2xl shadow-soft ${base} ${message.pending ? 'opacity-70' : ''} ${message.photo ? 'w-[300px] max-w-full' : ''}`}
+    >
       {message.photo && (
-        <button type="button" onClick={() => onOpenPhoto(message.photo!.id)} className="block">
+        <button type="button" onClick={() => onOpenPhoto(message.photo!.id)} className="block w-full">
           <img
             src={message.photo.thumbUrl}
             alt={message.photo.caption ?? 'Foto'}
-            className="max-h-72 w-full object-cover"
-            style={{ aspectRatio: `${message.photo.width} / ${message.photo.height}`, maxWidth: 320 }}
+            className="block w-full object-cover"
+            // Fotos muito altas são recortadas em 4:5 (a foto inteira abre ao tocar)
+            style={{ aspectRatio: `${Math.max(message.photo.width / message.photo.height, 0.8)}` }}
             loading="lazy"
             onLoad={onImageLoad}
           />
