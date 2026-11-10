@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { and, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, isNull } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { config } from '../config.js';
 import { normalizeCpf } from '../cpf.js';
@@ -41,7 +41,9 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
 
     const accIds = new Set(db.select({ id: accommodations.id }).from(accommodations).all().map((a) => a.id));
     const reset = body.reset === true;
-    const summary = { wiped: null as null | Record<string, number>, created: 0, updated: 0, keptClaimed: 0, linkedExisting: 0, removed: 0, events: 0, rsvps: 0, warnings: [] as string[] };
+    /** Contas com ajuste manual: datas e acompanhantes valem mesmo para quem já entrou no app */
+    const forceKeys = new Set(Array.isArray(body.forceKeys) ? body.forceKeys.filter((k): k is string => typeof k === 'string') : []);
+    const summary = { wiped: null as null | Record<string, number>, created: 0, updated: 0, keptClaimed: 0, forced: 0, linkedExisting: 0, removed: 0, events: 0, rsvps: 0, warnings: [] as string[] };
     const now = Date.now();
 
     class DryRun extends Error {}
@@ -117,7 +119,20 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
             if (byKey.claimedAt !== null) {
               // Já entrou no app: o que a pessoa editou vale mais que a planilha
               claimedKeys.add(key);
-              summary.keptClaimed++;
+              if (forceKeys.has(key)) {
+                // Ajuste manual combinado com os noivos: corrige só datas e acompanhantes
+                tx.update(guests)
+                  .set({ arrivalDate: fields.arrivalDate, departureDate: fields.departureDate, companions, companionCpfs })
+                  .where(eq(guests.id, byKey.id))
+                  .run();
+                tx.update(eventRsvps)
+                  .set({ peopleCount: 1 + companions.length })
+                  .where(and(eq(eventRsvps.guestId, byKey.id), gt(eventRsvps.peopleCount, 1 + companions.length)))
+                  .run();
+                summary.forced++;
+              } else {
+                summary.keptClaimed++;
+              }
               continue;
             }
             const phone = realPhone && (!byPhone || byPhone.id === byKey.id) ? realPhone : byKey.phone;

@@ -177,6 +177,16 @@ function answersOf(p) {
   return out;
 }
 
+// ---------- ajustes manuais (data/ajustes-lista.json, fora do git) ----------
+// Correções combinadas com os noivos que valem por cima da planilha, por nome da pessoa:
+//   { "Fulana de Tal": { "chegada": "2026-11-13", "saida": "2026-11-21", "contaPropria": true } }
+// "contaPropria" tira a pessoa da lista de acompanhantes e dá a ela uma conta separada (com as datas dela).
+const overridesFile = path.resolve(import.meta.dirname, '../data/ajustes-lista.json');
+const overrides = new Map(
+  Object.entries(fs.existsSync(overridesFile) ? JSON.parse(fs.readFileSync(overridesFile, 'utf8')) : {}).map(([name, o]) => [fold(name), o]),
+);
+const usedOverrides = new Set();
+
 // ---------- planilha → pessoas ----------
 const rows = readSheet(file);
 const headerIndex = rows.findIndex((r) => r.some((c) => fold(c) === 'convidado') && r.some((c) => fold(c) === 'telefone'));
@@ -202,7 +212,14 @@ for (const r of rows.slice(headerIndex + 1)) {
   let arrival = toDate(cell(r, C.arrival));
   let departure = toDate(cell(r, C.departure));
   if (arrival && departure && departure < arrival) arrival = departure = null;
+  const adjust = overrides.get(fold(name));
+  if (adjust) {
+    usedOverrides.add(fold(name));
+    if (adjust.chegada !== undefined) arrival = adjust.chegada;
+    if (adjust.saida !== undefined) departure = adjust.saida;
+  }
   people.push({
+    separate: adjust?.contaPropria === true,
     name,
     invite: cell(r, C.invite) || name,
     phone: normalizePhone(cell(r, C.ddi), cell(r, C.phone)),
@@ -223,6 +240,8 @@ const MAX_COMPANIONS = 6;
 const notes = [];
 const guests = [];
 const rsvps = [];
+/** Contas tocadas por ajuste manual: o servidor corrige datas e acompanhantes mesmo se a pessoa já entrou no app */
+const forceKeys = [];
 const usedPhones = new Map();
 const byInvite = new Map();
 for (const p of people) byInvite.set(p.invite, [...(byInvite.get(p.invite) ?? []), p]);
@@ -242,6 +261,10 @@ for (const [invite, members] of byInvite) {
     usedPhones.set(p.phone, p.name);
     holders.push({ ...p, group: [p] });
   }
+  // Ajuste manual: pessoa com conta própria mesmo sem telefone (ex.: chega em outro dia)
+  for (const p of members) {
+    if (p.separate && !holders.some((h) => h.name === p.name)) holders.push({ ...p, phone: null, group: [p] });
+  }
   if (holders.length === 0) {
     const first = members.find((m) => m.adult) ?? members[0];
     holders.push({ ...first, phone: null, group: [first] });
@@ -249,7 +272,7 @@ for (const [invite, members] of byInvite) {
   const holderNames = new Set(holders.map((h) => h.name));
   for (const p of members) {
     if (holderNames.has(p.name)) continue;
-    const owner = holders.find((h) => p.phone && h.phone === p.phone) ?? holders[0];
+    const owner = holders.find((h) => p.phone && h.phone === p.phone) ?? holders.find((h) => !h.separate) ?? holders[0];
     owner.group.push(p);
   }
   for (const h of holders) {
@@ -261,7 +284,12 @@ for (const [invite, members] of byInvite) {
     const key = slug(`${invite}--${h.name}`);
     // hospedagem e datas: as do titular; se ele não respondeu, as de alguém do grupo
     const withStay = [h, ...companions].find((m) => Object.keys(m.stay).length) ?? h;
-    const withDates = [h, ...companions].find((m) => m.arrival || m.departure) ?? h;
+    // datas: as do titular; o que faltar, completa com as de alguém do grupo
+    const withDates = {
+      arrival: h.arrival ?? companions.find((m) => m.arrival)?.arrival ?? null,
+      departure: h.departure ?? companions.find((m) => m.departure)?.departure ?? null,
+    };
+    if (members.some((m) => usedOverrides.has(fold(m.name))) && [h, ...h.group, ...members.filter((m) => m.separate)].some((m) => usedOverrides.has(fold(m.name)))) forceKeys.push(key);
     guests.push({
       key,
       name: h.name,
@@ -291,12 +319,14 @@ for (const e of EVENTS) {
   const yes = rsvps.filter((r) => r.eventId === e.id && r.status === 'yes').reduce((n, r) => n + r.peopleCount, 0);
   console.log(`  ${e.title}: ${yes} pessoas confirmadas`);
 }
+for (const name of overrides.keys()) if (!usedOverrides.has(name)) notes.push(`Ajuste manual sem efeito: "${name}" não está entre os confirmados da planilha.`);
+if (usedOverrides.size) console.log(`Ajustes manuais aplicados: ${usedOverrides.size}`);
 if (notes.length) console.log('\nPontos de atenção:\n- ' + notes.join('\n- '));
 
 const res = await fetch(baseUrl.replace(/\/$/, '') + '/api/import', {
   method: 'POST',
   headers: { 'content-type': 'application/json', 'x-import-token': token },
-  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, dryRun: dry, reset }),
+  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, forceKeys, dryRun: dry, reset }),
 });
 const out = await res.json().catch(() => ({}));
 console.log(`\n${dry ? 'SIMULAÇÃO' : 'IMPORTAÇÃO'} (${res.status}):`, JSON.stringify(out, null, 1));
