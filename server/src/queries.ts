@@ -20,6 +20,7 @@ import {
   type MessageDTO,
   type PhotoDTO,
   type ReactionDTO,
+  type ReplyPreviewDTO,
   type RsvpDTO,
 } from './dto.js';
 
@@ -59,8 +60,13 @@ export function loadReactions(messageId: number): ReactionDTO[] {
 function hydrateMessages(rows: Message[]): MessageDTO[] {
   if (rows.length === 0) return [];
 
-  const guestIds = [...new Set(rows.map((r) => r.guestId))];
-  const photoIds = rows.map((r) => r.photoId).filter((id): id is string => !!id);
+  // Mensagens respondidas (podem estar fora da página carregada, ou já apagadas)
+  const replyIds = [...new Set(rows.map((r) => r.replyToId).filter((id): id is number => !!id))];
+  const replyRows = replyIds.length ? db.select().from(messages).where(inArray(messages.id, replyIds)).all() : [];
+  const replyMap = new Map<number, Message>(replyRows.map((m) => [m.id, m]));
+
+  const guestIds = [...new Set([...rows, ...replyRows].map((r) => r.guestId))];
+  const photoIds = [...rows, ...replyRows].map((r) => r.photoId).filter((id): id is string => !!id);
   const messageIds = rows.map((r) => r.id);
 
   const guestRows = db.select().from(guests).where(inArray(guests.id, guestIds)).all();
@@ -80,10 +86,29 @@ function hydrateMessages(rows: Message[]): MessageDTO[] {
     reactionMap.set(r.messageId, list);
   }
 
+  const replyPreview = (id: number | null): ReplyPreviewDTO | null => {
+    if (!id) return null;
+    const m = replyMap.get(id);
+    if (!m) return null;
+    const author = guestMap.get(m.guestId);
+    const photo = m.photoId ? photoMap.get(m.photoId) : undefined;
+    const deleted = !!m.deletedAt;
+    return {
+      id: m.id,
+      guestId: m.guestId,
+      guestName: author?.name ?? 'Convidado',
+      text: deleted ? null : (m.text?.slice(0, 140) ?? null),
+      thumbUrl: !deleted && photo && !photo.deletedAt ? photoDTO(photo, m.id).thumbUrl : null,
+      deleted,
+    };
+  };
+
   return rows.map((r) => {
     const g = guestMap.get(r.guestId);
     const p = r.photoId ? photoMap.get(r.photoId) : undefined;
     return {
+      replyTo: replyPreview(r.replyToId),
+      mentions: r.mentions ?? [],
       id: r.id,
       guestId: r.guestId,
       guest: g ? guestLite(g) : { ...UNKNOWN_GUEST, id: r.guestId },

@@ -95,7 +95,7 @@ interface State {
   loadGuests: () => Promise<void>;
   loadMessages: () => Promise<void>;
   loadOlderMessages: () => Promise<void>;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, extra?: { replyTo?: Message | null; mentions?: string[] }) => Promise<void>;
   deleteMessage: (id: number) => Promise<void>;
   deletePhoto: (id: string) => Promise<void>;
   toggleReaction: (messageId: number, emoji: string) => Promise<Reaction[]>;
@@ -306,7 +306,7 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
-  async sendMessage(text) {
+  async sendMessage(text, extra = {}) {
     const me = get().me;
     if (!me) return;
     const tempId = 1_000_000_000_000 + ++pendingSeq;
@@ -318,11 +318,25 @@ export const useStore = create<State>((set, get) => ({
       photo: null,
       createdAt: Date.now(),
       reactions: [],
+      replyTo: extra.replyTo
+        ? {
+            id: extra.replyTo.id,
+            guestId: extra.replyTo.guestId,
+            guestName: extra.replyTo.guest.name,
+            text: extra.replyTo.text?.slice(0, 140) ?? null,
+            thumbUrl: extra.replyTo.photo?.thumbUrl ?? null,
+            deleted: false,
+          }
+        : null,
+      mentions: extra.mentions ?? [],
       pending: true,
     };
     set((s) => ({ messages: upsertMessage(s.messages, temp) }));
     try {
-      const res = await api<{ message: Message }>('/api/messages', { method: 'POST', json: { text } });
+      const res = await api<{ message: Message }>('/api/messages', {
+        method: 'POST',
+        json: { text, replyToId: extra.replyTo?.id ?? null, mentions: extra.mentions ?? [] },
+      });
       set((s) => ({ messages: upsertMessage(s.messages.filter((m) => m.id !== tempId), res.message) }));
     } catch (err) {
       set((s) => ({ messages: s.messages.filter((m) => m.id !== tempId) }));

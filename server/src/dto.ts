@@ -62,6 +62,17 @@ export interface ReactionDTO {
   guestId: string;
 }
 
+/** Resumo da mensagem respondida, mostrado dentro do balão da resposta. */
+export interface ReplyPreviewDTO {
+  id: number;
+  guestId: string;
+  guestName: string;
+  /** Trecho do texto (null se era só foto ou se foi apagada) */
+  text: string | null;
+  thumbUrl: string | null;
+  deleted: boolean;
+}
+
 export interface MessageDTO {
   id: number;
   guestId: string;
@@ -70,6 +81,9 @@ export interface MessageDTO {
   photo: PhotoDTO | null;
   createdAt: number;
   reactions: ReactionDTO[];
+  replyTo: ReplyPreviewDTO | null;
+  /** Ids dos convidados marcados com @ */
+  mentions: string[];
 }
 
 export function guestLite(g: Guest): GuestLiteDTO {

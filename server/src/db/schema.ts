@@ -96,6 +96,13 @@ export const messages = sqliteTable(
       .references(() => guests.id),
     text: text('text'),
     photoId: text('photo_id').references(() => photos.id),
+    /** Mensagem à qual esta responde (como no WhatsApp) */
+    replyToId: integer('reply_to_id'),
+    /** Ids dos convidados marcados com @ no texto */
+    mentions: text('mentions', { mode: 'json' })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
     createdAt: integer('created_at').notNull(),
     deletedAt: integer('deleted_at'),
   },

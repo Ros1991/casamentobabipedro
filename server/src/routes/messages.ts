@@ -1,12 +1,12 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { isAdmin, requireGuest } from '../auth.js';
 import { db } from '../db/index.js';
-import { messages, photos, reactions } from '../db/schema.js';
-import { notifyNewMessage } from '../push.js';
+import { guests, messages, photos, reactions } from '../db/schema.js';
+import { notifyDirect, notifyNewMessage } from '../push.js';
 import { loadMessage, loadMessages, loadReactions } from '../queries.js';
 import { broadcast } from '../realtime.js';
-import { str } from '../validate.js';
+import { num, str } from '../validate.js';
 
 export const ALLOWED_EMOJI = ['❤️', '😂', '🥹', '🔥', '👏', '🙌'];
 
@@ -28,13 +28,37 @@ export default async function messageRoutes(app: FastifyInstance): Promise<void>
       const text = str(body.text, 2000);
       if (!text) return reply.code(400).send({ error: 'text', message: 'Escreva alguma coisa.' });
 
+      // Resposta a outra mensagem (opcional)
+      const replyId = num(body.replyToId);
+      const replied = replyId ? db.select().from(messages).where(eq(messages.id, replyId)).get() : undefined;
+      if (replyId && (!replied || replied.deletedAt)) {
+        return reply.code(400).send({ error: 'replyToId', message: 'A mensagem que você está respondendo foi apagada.' });
+      }
+
+      // Pessoas marcadas com @: só ids de convidados que existem, sem repetir, no máximo 20
+      const asked = Array.isArray(body.mentions) ? [...new Set(body.mentions.filter((v): v is string => typeof v === 'string'))].slice(0, 20) : [];
+      const mentions = asked.length
+        ? db
+            .select({ id: guests.id })
+            .from(guests)
+            .where(inArray(guests.id, asked))
+            .all()
+            .map((g) => g.id)
+        : [];
+
+      const me = request.guest!;
       const result = db
         .insert(messages)
-        .values({ guestId: request.guest!.id, text, createdAt: Date.now() })
+        .values({ guestId: me.id, text, replyToId: replied?.id ?? null, mentions, createdAt: Date.now() })
         .run();
       const dto = loadMessage(Number(result.lastInsertRowid))!;
       broadcast('message:new', dto);
-      void notifyNewMessage(dto);
+
+      // Quem foi marcado ou respondido recebe um aviso próprio; o resto, o aviso geral do mural
+      const direct = new Map<string, 'mention' | 'reply'>();
+      if (replied && replied.guestId !== me.id) direct.set(replied.guestId, 'reply');
+      for (const id of mentions) if (id !== me.id) direct.set(id, 'mention');
+      void notifyDirect(dto, direct).then(() => notifyNewMessage(dto, new Set(direct.keys())));
       return { message: dto };
     },
   );

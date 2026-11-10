@@ -85,7 +85,34 @@ export async function notifyOfficialEvent(event: EventDTO, action: 'new' | 'upda
 /**
  * Avisa quem assinou e não está com o app aberto. Roda em segundo plano (não bloqueia a resposta).
  */
-export async function notifyNewMessage(message: MessageDTO): Promise<void> {
+/**
+ * Aviso para quem foi marcado (@) ou teve a mensagem respondida. Sem o limite de 2 minutos
+ * e com título próprio; quem está com o app aberto vê na hora e não recebe push.
+ */
+export async function notifyDirect(message: MessageDTO, who: Map<string, 'mention' | 'reply'>): Promise<void> {
+  if (!pushEnabled || who.size === 0) return;
+  const online = new Set(onlineGuestIds());
+  const author = firstName(message.guest.name);
+  for (const kind of ['mention', 'reply'] as const) {
+    const targets = db
+      .select()
+      .from(pushSubscriptions)
+      .all()
+      .filter((s) => who.get(s.guestId) === kind && !online.has(s.guestId));
+    if (targets.length === 0) continue;
+    const payload = JSON.stringify({
+      title: kind === 'mention' ? `${author} marcou você 👋` : `${author} respondeu sua mensagem`,
+      body: (message.text ?? '').slice(0, 180),
+      url: '/mural',
+      tag: `mural-${kind}-${message.id}`,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+    });
+    await sendToAll(targets, payload);
+  }
+}
+
+export async function notifyNewMessage(message: MessageDTO, skip: Set<string> = new Set()): Promise<void> {
   if (!pushEnabled) return;
   const now = Date.now();
   const online = new Set(onlineGuestIds());
@@ -96,6 +123,7 @@ export async function notifyNewMessage(message: MessageDTO): Promise<void> {
     .filter(
       (s) =>
         s.guestId !== message.guestId &&
+        !skip.has(s.guestId) &&
         !online.has(s.guestId) &&
         (!s.lastNotifiedAt || now - s.lastNotifiedAt > THROTTLE_MS),
     );
