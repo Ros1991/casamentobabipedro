@@ -77,7 +77,7 @@ export async function notifyOfficialEvent(event: EventDTO, action: 'new' | 'upda
     url: '/agenda',
     tag: `evento-${event.id}`,
     icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    badge: '/icons/badge.png',
   });
   await sendToAll(targets, payload);
 }
@@ -106,7 +106,7 @@ export async function notifyDirect(message: MessageDTO, who: Map<string, 'mentio
       url: '/mural',
       tag: `mural-${kind}-${message.id}`,
       icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      badge: '/icons/badge.png',
     });
     await sendToAll(targets, payload);
   }
@@ -139,7 +139,7 @@ export async function notifyNewMessage(message: MessageDTO, skip: Set<string> = 
     url: '/mural',
     tag: 'mural',
     icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    badge: '/icons/badge.png',
   });
 
   await Promise.allSettled(

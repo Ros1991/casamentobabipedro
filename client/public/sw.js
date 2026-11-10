@@ -76,7 +76,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body: data.body || 'Novidades no mural',
       icon: data.icon || '/icons/icon-192.png',
-      badge: data.badge || '/icons/icon-192.png',
+      badge: data.badge || '/icons/badge.png',
       tag: data.tag || 'mural',
       renotify: true,
       data: { url: data.url || '/mural' },

@@ -55,7 +55,7 @@ export async function showLocalNotification(title: string, body: string, url = '
     await reg.showNotification(title, {
       body,
       icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      badge: '/icons/badge.png',
       tag: 'mural',
       data: { url },
     });

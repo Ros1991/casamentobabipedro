@@ -30,3 +30,18 @@ for (const t of targets) {
   await sharp(srcPath).extract(crop(t.side)).resize(t.size, t.size).png().toFile(path.join(outDir, t.name));
   console.log('ok', t.name);
 }
+
+// Ícone pequeno das notificações no Android: o sistema usa só a silhueta (canal alfa) e pinta de branco.
+// Uma foto colorida vira um quadrado branco, então aqui sai o monograma P/B com coqueiro, branco em fundo transparente.
+const brasao = path.join(root, 'scripts/arte/brasao.png');
+// recorte só no coqueiro com as letras (sem a moldura), centralizado num quadrado transparente
+const alpha = await sharp(brasao)
+  .extract({ left: 432, top: 178, width: 278, height: 462 })
+  .resize(96, 96, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .extractChannel('alpha')
+  .toBuffer();
+await sharp({ create: { width: 96, height: 96, channels: 3, background: '#ffffff' } })
+  .joinChannel(alpha)
+  .png()
+  .toFile(path.join(outDir, 'badge.png'));
+console.log('ok badge.png');
