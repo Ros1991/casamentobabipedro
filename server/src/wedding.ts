@@ -12,7 +12,6 @@ export const WEDDING = {
     'No complexo Aquiraz Riviera, de frente para a praia: cerca de 1h de Fortaleza e 10 min de carro da Praia do Presídio. A festa vai até as 23h. Quem não ficar perto deve combinar o transporte de volta com antecedência, porque Uber à noite na região é difícil.',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Beach+Club+Aquiraz+Riviera',
   officialSite: 'https://www.casoriobabitos.com.br',
-  rsvpUrl: 'https://noivos.casar.com/babitos#rsvp',
   giftsUrl: 'https://casoriobabitos.com.br/#/presentes',
   /** Chave Pix dos noivos (e-mail), para quem preferir presentear assim */
   pixKey: 'babicoelhocintra@gmail.com',

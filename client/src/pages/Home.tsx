@@ -311,12 +311,9 @@ export function Home() {
 
         <GiftsCard />
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <a href={w.officialSite} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             Site oficial <ExternalLink size={16} />
-          </a>
-          <a href={w.rsvpUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
-            Confirmar presença <ExternalLink size={16} />
           </a>
           <a href={w.instagramUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-3 text-sm font-semibold text-terra-dark">
             <span className="flex items-center gap-1.5">

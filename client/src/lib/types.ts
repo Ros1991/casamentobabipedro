@@ -16,7 +16,6 @@ export interface Wedding {
   venueNote: string;
   mapsUrl: string;
   officialSite: string;
-  rsvpUrl: string;
   giftsUrl: string;
   pixKey: string;
   dressCode: string;

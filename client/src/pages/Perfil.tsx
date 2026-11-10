@@ -2,6 +2,7 @@ import { Camera, LogOut, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
+import { AvatarCropper } from '../components/AvatarCropper';
 import { CompanionsInput } from '../components/CompanionsInput';
 import { InstallBanner } from '../components/InstallBanner';
 import { NotificationsCard } from '../components/NotificationsCard';
@@ -9,7 +10,6 @@ import { StayPicker } from '../components/StayPicker';
 import { errorMessage } from '../lib/api';
 import { isValidCpf, maskCpf } from '../lib/cpf';
 import { formatPhone } from '../lib/format';
-import { compressImage } from '../lib/image';
 import { toast } from '../lib/toast';
 import type { StayInput } from '../lib/types';
 import { useStore } from '../store';
@@ -38,6 +38,7 @@ export function Perfil() {
   const [showPhone, setShowPhone] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   useEffect(() => {
@@ -91,15 +92,19 @@ export function Perfil() {
     }
   };
 
-  const onAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Escolheu a foto: abre o ajuste de enquadramento antes de enviar
+  const onAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file) return;
+    if (file) setCropFile(file);
+  };
+
+  const onCropped = async (blob: Blob) => {
     setAvatarBusy(true);
     try {
-      const blob = await compressImage(file, 600, 0.85);
       await uploadAvatar(blob);
       toast.success('Foto de perfil atualizada!');
+      setCropFile(null);
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -125,6 +130,7 @@ export function Perfil() {
 
   return (
     <div className="space-y-5 px-4 pt-5 pb-10">
+      {cropFile && <AvatarCropper file={cropFile} busy={avatarBusy} onCancel={() => setCropFile(null)} onConfirm={onCropped} />}
       <div className="flex items-center gap-4">
         <div className="relative">
           <Avatar guest={me} size={84} badge={me.companions?.length ? `+${me.companions.length}` : null} />

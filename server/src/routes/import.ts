@@ -243,4 +243,32 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
 
     return { ok: true, dryRun, ...summary };
   });
+
+  /** Limpa o mural: apaga as mensagens de texto e as reações. Fotos (e as mensagens delas) ficam. */
+  app.post('/api/import/limpar-mural', async (request, reply) => {
+    const token = request.headers['x-import-token'];
+    if (!config.importToken || typeof token !== 'string' || !sameToken(token, config.importToken)) {
+      return reply.code(403).send({ error: 'forbidden', message: 'Token incorreto.' });
+    }
+    const includePhotos = ((request.body ?? {}) as Record<string, unknown>).photos === true;
+    const result = db.transaction((tx) => {
+      const before = { messages: tx.select().from(messages).all().length, photos: tx.select().from(photos).all().length };
+      const keep = includePhotos ? [] : tx.select().from(messages).all().filter((m) => m.photoId).map((m) => m.id);
+      let removed = 0;
+      for (const m of tx.select().from(messages).all()) {
+        if (keep.includes(m.id)) continue;
+        tx.delete(reactions).where(eq(reactions.messageId, m.id)).run();
+        tx.delete(messages).where(eq(messages.id, m.id)).run();
+        removed++;
+      }
+      const files: string[] = [];
+      if (includePhotos) {
+        for (const p of tx.select().from(photos).all()) files.push(p.fileKey, p.thumbKey);
+        tx.delete(photos).run();
+      }
+      return { before, removedMessages: removed, removedPhotos: includePhotos ? before.photos : 0, files };
+    });
+    for (const f of result.files) fs.rmSync(path.join(config.uploadDir, f), { force: true });
+    return { ok: true, before: result.before, removedMessages: result.removedMessages, removedPhotos: result.removedPhotos };
+  });
 }

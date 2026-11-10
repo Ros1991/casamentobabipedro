@@ -7,6 +7,7 @@ Clone do site feito para o casamento de Anna Carolina & Fernando ([Ros1991/casam
 ## Lista de confirmados e entrada em 2 etapas
 
 - A lista dos noivos (planilha `.xlsx`, que **não** fica no repositório) é importada com `IMPORT_TOKEN=... node scripts/importar-lista.mjs <planilha> <url> [--dry]`. Só entram as linhas "Confirmado". Telefones em qualquer formato são padronizados; quem tem telefone próprio vira convidado e o resto do convite entra como acompanhante. Hospedagem, datas, CPF e as respostas do formulário (pagode, sábado) vêm junto, e os combinados da programação já nascem com as presenças.
+- `npm run mural:limpar` apaga as mensagens de texto do mural em produção (as fotos ficam; `node scripts/limpar-mural.mjs <url> --fotos` apaga as fotos também).
 - Atalhos (usam `data/lista-confirmados.xlsx` e `data/import-token.txt`, que ficam só na máquina): `npm run lista:simular` (não grava), `npm run lista:importar` (atualiza) e **`npm run lista:restaurar`** (apaga TUDO em produção e reimporta: volta ao ponto zero depois de testes).
 - Rodar de novo atualiza só quem ainda não entrou no app; quem saiu da planilha e nunca entrou é removido.
 - Na entrada a pessoa digita só o WhatsApp. Achou: entra direto (casa com ou sem o nono dígito). Não achou: procura o próprio nome (a busca mostra só nome e convite) e o telefone fica salvo. Não está na lista: cadastro completo. A segunda etapa (hospedagem, datas, acompanhantes) só aparece para quem ainda não tinha respondido.
