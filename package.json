@@ -14,9 +14,9 @@
     "start": "npm run start -w server",
     "db:generate": "npm run db:generate -w server",
     "icons": "node scripts/make-icons.mjs",
-    "lista:simular": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://galera-production-e5fd.up.railway.app --dry",
-    "lista:importar": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://galera-production-e5fd.up.railway.app",
-    "lista:restaurar": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://galera-production-e5fd.up.railway.app --reset"
+    "lista:simular": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://babitos.com.br --dry",
+    "lista:importar": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://babitos.com.br",
+    "lista:restaurar": "node scripts/importar-lista.mjs data/lista-confirmados.xlsx https://babitos.com.br --reset"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

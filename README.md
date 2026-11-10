@@ -68,7 +68,7 @@ npm run icons          # regenera os ícones do PWA a partir de client/public/br
 
 O projeto já está no ar: **projeto `galera-babi-pedro`**, serviço **`galera`**, ligado ao repositório `Ros1991/casamentobabipedro` (branch `main`). **Todo push na `main` faz deploy automaticamente.**
 
-- URL: <https://galera-production-e5fd.up.railway.app>
+- URL oficial: <https://babitos.com.br> (também `www.babitos.com.br`; o endereço <https://galera-production-e5fd.up.railway.app> continua funcionando). O domínio foi registrado no Registro.br com DNS no Cloudflare: dois CNAME em modo "DNS only" (raiz e `www`) e dois TXT `_railway-verify` pedidos pelo Railway.
 - Região `us-east4` (Virgínia, a de menor latência para o Brasil entre as disponíveis).
 - Volume `galera-data` montado em `/data` (banco `galera.db` + `uploads/`).
 - Variáveis cadastradas no serviço (ver tabela acima). `INVITE_CODE`, `ADMIN_PHONES` e `TELAO_CODE` são provisórios e podem ser trocados no painel do Railway (Variables) ou com `railway variables --set "CHAVE=valor"`.

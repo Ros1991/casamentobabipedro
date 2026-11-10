@@ -18,13 +18,18 @@ export default defineRailway(() => {
     healthcheck: "/health",
     healthcheckTimeout: 120,
     volumeMounts: { "/data": galeraVolume },
+    // Domínio próprio (DNS no Cloudflare, modo "DNS only"). O endereço galera-production-e5fd.up.railway.app continua ativo.
+    domains: [
+      { domain: "babitos.com.br", port: 3000 },
+      { domain: "www.babitos.com.br", port: 3000 },
+    ],
     env: {
       PORT: "3000",
       NODE_ENV: "production",
       DATA_DIR: "/data",
       MAX_UPLOAD_MB: "12",
-      PUBLIC_URL: "https://galera-production-e5fd.up.railway.app",
-      VAPID_SUBJECT: "https://galera-production-e5fd.up.railway.app",
+      PUBLIC_URL: "https://babitos.com.br",
+      VAPID_SUBJECT: "https://babitos.com.br",
       // Segredos e códigos ficam só no Railway (Variables), nunca no repositório
       SESSION_SECRET: preserve(),
       // Sem INVITE_CODE: entrada sem código, a pedido dos noivos (menos barreira). Para exigir, declare aqui e no Railway.
