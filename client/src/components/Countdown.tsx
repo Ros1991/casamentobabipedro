@@ -17,7 +17,7 @@ export function diffParts(targetIso: string, now = Date.now()) {
   const target = new Date(targetIso).getTime();
   const ms = target - now;
   if (ms <= 0) return null;
-  const tz = /([+-])(d{2}):?(d{2})$/.exec(targetIso);
+  const tz = /([+-])(\d{2}):?(\d{2})$/.exec(targetIso);
   const offset = tz ? (tz[1] === '-' ? -1 : 1) * (Number(tz[2]) * 60 + Number(tz[3])) * 60_000 : 0;
   const localDay = (t: number) => Math.floor((t + offset) / DAY);
   const days = localDay(target) - localDay(now);
