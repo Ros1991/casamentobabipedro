@@ -34,7 +34,7 @@ Outros comandos:
 npm run build          # compila client (client/dist) e server (server/dist)
 npm start              # roda o build de produção (serve o client em :3000)
 npm run db:generate    # gera migração SQL após mudar server/src/db/schema.ts
-npm run icons          # regenera os ícones do PWA a partir de client/public/brasao.png
+npm run icons          # regenera os ícones do PWA a partir da foto do casal em scripts/arte/casal.webp
 ```
 
 ## Variáveis de ambiente
