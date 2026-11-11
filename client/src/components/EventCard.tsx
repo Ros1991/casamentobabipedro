@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Clock, HelpCircle, MapPin, MessagesSquare, Minus, MoreHorizontal, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { CalendarDays, Check, Clock, HelpCircle, Hourglass, MapPin, MessagesSquare, Minus, MoreHorizontal, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '../lib/api';
@@ -33,6 +33,7 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
   const deleteEvent = useStore((s) => s.deleteEvent);
   const [busy, setBusy] = useState(false);
   const [whoOpen, setWhoOpen] = useState(false);
+  const [pendingOpen, setPendingOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -275,6 +276,22 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
         </span>
       </button>
 
+      {/* Só admins: quem ainda não respondeu, em um botão à vista no cartão */}
+      {isAdmin && pending.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setPendingOpen(true)}
+          className="mt-2 flex w-full items-center gap-2 rounded-2xl border border-dashed border-terra-light px-3 py-2 text-left text-sm text-terra-dark"
+        >
+          <Hourglass size={15} className="shrink-0" />
+          <span className="min-w-0 flex-1">
+            <strong>{pendingPeople}</strong> ainda não {pendingPeople === 1 ? 'decidiu' : 'decidiram'}
+          </span>
+          <span className="shrink-0 rounded-full bg-terra-pale px-2 py-0.5 text-[10px] font-bold">só admins</span>
+          <span className="shrink-0 font-semibold underline">ver</span>
+        </button>
+      )}
+
       {/* Conversa só deste combinado */}
       <Link
         to={`/agenda/${event.id}/conversa`}
@@ -320,10 +337,13 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
           );
         })}
         {event.rsvps.length === 0 && <p className="text-sm text-ink-soft">Ninguém respondeu ainda. Seja a primeira pessoa!</p>}
+      </BottomSheet>
+
+      <BottomSheet open={pendingOpen} onClose={() => setPendingOpen(false)} title={`Ainda não decidiram: ${event.title}`}>
         {isAdmin && pending.length > 0 && (
-          <div className="mt-2 rounded-2xl border border-dashed border-terra-light p-3">
+          <div>
             <div className="mb-1.5 flex flex-wrap items-center gap-x-2 text-xs font-bold tracking-widest text-terra uppercase">
-              Ainda não decidiram ({pendingPeople})
+              {pendingPeople} {pendingPeople === 1 ? 'pessoa' : 'pessoas'} em {pending.length} {pending.length === 1 ? 'conta' : 'contas'}
               <span className="rounded-full bg-terra-pale px-2 py-0.5 text-[10px] tracking-normal text-terra-dark normal-case">só admins veem</span>
             </div>
             <ul className="divide-y divide-sand/70">
