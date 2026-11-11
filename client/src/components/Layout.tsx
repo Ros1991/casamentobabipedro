@@ -1,7 +1,9 @@
 import { CalendarDays, Home, Images, MapPinned, MessageCircle, UserRound } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useStore } from '../store';
+import { Avatar } from './Avatar';
+import { BottomSheet } from './BottomSheet';
 import { Monogram } from './Monogram';
 import { OfflineQueueBanner } from './OfflineQueueBanner';
 
@@ -17,7 +19,14 @@ const NAV = [
 export function Layout() {
   const location = useLocation();
   const unread = useStore((s) => s.unreadMural);
-  const online = useStore((s) => s.online.length);
+  const onlineIds = useStore((s) => s.online);
+  const online = onlineIds.length;
+  const isAdmin = useStore((s) => s.isAdmin);
+  const meId = useStore((s) => s.me?.id);
+  const guests = useStore((s) => s.guests);
+  const guestsLoaded = useStore((s) => s.guestsLoaded);
+  const loadGuests = useStore((s) => s.loadGuests);
+  const [onlineOpen, setOnlineOpen] = useState(false);
   const setMuralActive = useStore((s) => s.setMuralActive);
   const config = useStore((s) => s.config);
   const isMap = location.pathname.startsWith('/mapa');
@@ -40,13 +49,50 @@ export function Layout() {
             {config?.wedding.couple ?? 'Pedro & Babi'}
           </div>
         </div>
-        {online > 0 && (
-          <div className="flex items-center gap-1.5 rounded-full bg-cream/80 px-2.5 py-1 text-xs font-semibold text-terra-dark">
-            <span className="size-2 rounded-full bg-emerald-500" />
-            {online} online
-          </div>
-        )}
+        {online > 0 &&
+          (isAdmin ? (
+            // Só os admins (noivos e organização) podem abrir a lista de quem está online
+            <button
+              type="button"
+              onClick={() => {
+                if (!guestsLoaded) void loadGuests().catch(() => undefined);
+                setOnlineOpen(true);
+              }}
+              className="flex items-center gap-1.5 rounded-full bg-cream/80 px-2.5 py-1 text-xs font-semibold text-terra-dark underline decoration-dotted underline-offset-2"
+              aria-label={`${online} online: ver quem está com o app aberto`}
+            >
+              <span className="size-2 rounded-full bg-emerald-500" />
+              {online} online
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 rounded-full bg-cream/80 px-2.5 py-1 text-xs font-semibold text-terra-dark">
+              <span className="size-2 rounded-full bg-emerald-500" />
+              {online} online
+            </div>
+          ))}
       </header>
+
+      {isAdmin && (
+        <BottomSheet open={onlineOpen} onClose={() => setOnlineOpen(false)} title={`Online agora (${online})`}>
+          <p className="mb-2 text-xs text-ink-soft">Quem está com o app aberto na tela neste momento. Só os admins veem esta lista.</p>
+          <ul className="divide-y divide-sand/70">
+            {onlineIds
+              .map((id) => guests[id])
+              .filter((g) => !!g)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((g) => (
+                <li key={g.id} className="flex items-center gap-3 py-2">
+                  <Avatar guest={g} size={34} online />
+                  <span className="min-w-0 flex-1 truncate font-semibold text-ink">
+                    {g.name}
+                    {g.id === meId && <span className="ml-1 text-xs font-normal text-terra">(você)</span>}
+                  </span>
+                </li>
+              ))}
+          </ul>
+          {onlineIds.some((id) => !guests[id]) && <p className="mt-2 text-xs text-ink-soft">Carregando nomes…</p>}
+        </BottomSheet>
+      )}
 
       {!isMap && <OfflineQueueBanner />}
 
