@@ -63,6 +63,42 @@ export default async function messageRoutes(app: FastifyInstance): Promise<void>
     },
   );
 
+  /** Editar o texto de uma mensagem própria (do mural ou da conversa de um combinado). Fica marcada como editada. */
+  app.patch(
+    '/api/messages/:id',
+    { preHandler: requireGuest, config: { rateLimit: { max: 40, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      const msg = db.select().from(messages).where(eq(messages.id, id)).get();
+      if (!msg || msg.deletedAt) return reply.code(404).send({ error: 'not_found', message: 'Mensagem não encontrada.' });
+      if (msg.guestId !== request.guest!.id) {
+        return reply.code(403).send({ error: 'forbidden', message: 'Você só pode editar o que você escreveu.' });
+      }
+      const body = (request.body ?? {}) as Record<string, unknown>;
+      const text = str(body.text, 2000);
+      // Mensagem só de texto não pode ficar vazia; legenda de foto pode
+      if (!text && !msg.photoId) return reply.code(400).send({ error: 'text', message: 'Escreva alguma coisa (ou apague a mensagem).' });
+      const asked = Array.isArray(body.mentions) ? [...new Set(body.mentions.filter((v): v is string => typeof v === 'string'))].slice(0, 20) : null;
+      const mentions = asked
+        ? asked.length
+          ? db
+              .select({ id: guests.id })
+              .from(guests)
+              .where(inArray(guests.id, asked))
+              .all()
+              .map((g) => g.id)
+          : []
+        : msg.mentions;
+      if (text !== msg.text) {
+        db.update(messages).set({ text, mentions, editedAt: Date.now() }).where(eq(messages.id, id)).run();
+        if (msg.photoId) db.update(photos).set({ caption: text }).where(eq(photos.id, msg.photoId)).run();
+      }
+      const dto = loadMessage(id)!;
+      broadcast('message:updated', dto);
+      return { message: dto };
+    },
+  );
+
   app.delete('/api/messages/:id', { preHandler: requireGuest }, async (request, reply) => {
     const id = Number((request.params as { id: string }).id);
     const msg = db.select().from(messages).where(eq(messages.id, id)).get();

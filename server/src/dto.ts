@@ -86,6 +86,8 @@ export interface MessageDTO {
   mentions: string[];
   /** Combinado a que a mensagem pertence (null = mural geral) */
   eventId: string | null;
+  /** Quando foi editada (null = nunca) */
+  editedAt: number | null;
 }
 
 export function guestLite(g: Guest): GuestLiteDTO {

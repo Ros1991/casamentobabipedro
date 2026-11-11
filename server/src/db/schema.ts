@@ -106,6 +106,8 @@ export const messages = sqliteTable(
       .notNull()
       .default(sql`'[]'`),
     createdAt: integer('created_at').notNull(),
+    /** Quando o texto foi editado pela última vez (null = nunca) */
+    editedAt: integer('edited_at'),
     deletedAt: integer('deleted_at'),
   },
   (t) => [index('messages_created_idx').on(t.createdAt)],

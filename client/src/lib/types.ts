@@ -131,6 +131,8 @@ export interface Message {
   mentions?: string[];
   /** Combinado a que a mensagem pertence (null = mural geral) */
   eventId?: string | null;
+  /** Quando foi editada (null = nunca) */
+  editedAt?: number | null;
   /** Só no cliente: envio em andamento */
   pending?: boolean;
 }

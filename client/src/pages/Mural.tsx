@@ -1,4 +1,4 @@
-import { ArrowDown, Camera, Reply, SendHorizonal, Smile, Trash2, X } from 'lucide-react';
+import { ArrowDown, Camera, Check, Pencil, Reply, SendHorizonal, Smile, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Avatar } from '../components/Avatar';
 import { PhotoCapture } from '../components/PhotoCapture';
@@ -66,6 +66,7 @@ export function Mural() {
   const loadOlder = useStore((s) => s.loadOlderMessages);
   const sendMessage = useStore((s) => s.sendMessage);
   const deleteMessage = useStore((s) => s.deleteMessage);
+  const editMessage = useStore((s) => s.editMessage);
   const emitTyping = useStore((s) => s.emitTyping);
   const typing = useStore((s) => s.typing);
   const guestsLoaded = useStore((s) => s.guestsLoaded);
@@ -78,6 +79,8 @@ export function Mural() {
   const [text, setText] = useState('');
   const [caret, setCaret] = useState(0);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  /** Mensagem própria sendo editada (o texto dela vai para o campo) */
+  const [editing, setEditing] = useState<Message | null>(null);
   /** Pessoas escolhidas na lista do @ nesta mensagem */
   const [picked, setPicked] = useState<{ id: string; name: string }[]>([]);
   const [flash, setFlash] = useState<number | null>(null);
@@ -141,7 +144,27 @@ export function Mural() {
 
   const send = async () => {
     const value = text.trim();
-    if (!value || sending) return;
+    if (sending) return;
+    if (editing) {
+      // legenda de foto pode ficar vazia; mensagem só de texto, não
+      if (!value && !editing.photo) return;
+      const target = editing;
+      const mentions = [...new Set(picked.filter((p) => value.includes('@' + p.name)).map((p) => p.id))];
+      setSending(true);
+      try {
+        if (value !== (target.text ?? '')) await editMessage(target.id, value, mentions);
+        setEditing(null);
+        setText('');
+        setPicked([]);
+        setEmojiOpen(false);
+      } catch (err) {
+        toast.error(errorMessage(err));
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+    if (!value) return;
     const replyTo = replyingTo;
     const chosen = picked;
     // Só vale quem continua marcado no texto (a pessoa pode ter apagado o @)
@@ -234,7 +257,29 @@ export function Mural() {
     });
   };
 
+  const startEdit = (m: Message) => {
+    setEditing(m);
+    setReplyingTo(null);
+    setText(m.text ?? '');
+    // quem já estava marcado continua marcado se o @nome ficar no texto
+    setPicked((m.mentions ?? []).map((id) => ({ id, name: guests[id]?.name ?? '' })).filter((p) => p.name));
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      el?.focus();
+      const end = (m.text ?? '').length;
+      el?.setSelectionRange(end, end);
+      setCaret(end);
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditing(null);
+    setText('');
+    setPicked([]);
+  };
+
   const startReply = (m: Message) => {
+    setEditing(null);
     setReplyingTo(m);
     inputRef.current?.focus();
   };
@@ -308,7 +353,14 @@ export function Mural() {
                     }}
                   />
                   <div className={`mt-1 flex items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-[10px] text-ink-soft">{m.pending ? 'enviando…' : formatTime(m.createdAt)}</span>
+                    <span className="flex items-center gap-1 text-[10px] text-ink-soft">
+                      {m.pending ? 'enviando…' : formatTime(m.createdAt)}
+                      {m.editedAt && (
+                        <span title="Mensagem editada" aria-label="editada" className="flex items-center">
+                          <Pencil size={9} />
+                        </span>
+                      )}
+                    </span>
                     {!m.pending && <Reactions messageId={m.id} reactions={m.reactions} align={mine ? 'right' : 'left'} />}
                     {!m.pending && (
                       <button
@@ -319,6 +371,17 @@ export function Mural() {
                         title="Responder"
                       >
                         <Reply size={14} />
+                      </button>
+                    )}
+                    {mine && !m.pending && (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(m)}
+                        className="rounded-full border border-sand bg-cream/80 p-1.5 text-ink-soft hover:border-terra hover:text-terra-dark"
+                        aria-label={m.photo ? 'Editar legenda' : 'Editar mensagem'}
+                        title="Editar"
+                      >
+                        <Pencil size={14} />
                       </button>
                     )}
                     {canDelete &&
@@ -385,6 +448,18 @@ export function Mural() {
             ))}
           </ul>
         )}
+        {editing && (
+          <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-2xl border-l-4 border-gold bg-gold/10 px-3 py-2">
+            <Pencil size={15} className="shrink-0 text-terra-dark" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-terra-dark">{editing.photo ? 'Editando a legenda' : 'Editando mensagem'}</div>
+              <div className="truncate text-sm text-ink-soft">{editing.text ?? 'Foto sem legenda'}</div>
+            </div>
+            <button type="button" onClick={cancelEdit} className="rounded-full p-1.5 text-ink-soft hover:bg-cream" aria-label="Cancelar edição">
+              <X size={16} />
+            </button>
+          </div>
+        )}
         {replyingTo && (
           <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-2xl border-l-4 border-terra bg-terra-pale px-3 py-2">
             <div className="min-w-0 flex-1">
@@ -447,11 +522,11 @@ export function Mural() {
           <button
             type="button"
             onClick={send}
-            disabled={!text.trim() || sending}
+            disabled={(!text.trim() && !editing?.photo) || sending}
             className="flex size-11 items-center justify-center rounded-full bg-terra-dark text-cream transition disabled:opacity-40"
-            aria-label="Enviar"
+            aria-label={editing ? 'Salvar edição' : 'Enviar'}
           >
-            <SendHorizonal size={20} />
+            {editing ? <Check size={20} /> : <SendHorizonal size={20} />}
           </button>
         </div>
       </div>

@@ -50,6 +50,13 @@
       "when": 1794398784453,
       "tag": "0006_conversa_por_combinado",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794414328820,
+      "tag": "0007_mensagem_editada",
+      "breakpoints": true
     }
   ]
 }

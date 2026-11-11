@@ -111,6 +111,7 @@ function hydrateMessages(rows: Message[]): MessageDTO[] {
       replyTo: replyPreview(r.replyToId),
       mentions: r.mentions ?? [],
       eventId: r.eventId,
+      editedAt: r.editedAt,
       id: r.id,
       guestId: r.guestId,
       guest: g ? guestLite(g) : { ...UNKNOWN_GUEST, id: r.guestId },

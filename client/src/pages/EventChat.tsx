@@ -1,4 +1,4 @@
-import { ArrowLeft, SendHorizonal, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, Check, Pencil, SendHorizonal, Trash2, Users, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -20,6 +20,7 @@ export function EventChat() {
   const eventsLoaded = useStore((s) => s.eventsLoaded);
   const loadEvents = useStore((s) => s.loadEvents);
   const deleteMessage = useStore((s) => s.deleteMessage);
+  const editMessage = useStore((s) => s.editMessage);
   const online = useStore((s) => s.online);
   const event = events.find((e) => e.id === id);
 
@@ -29,6 +30,8 @@ export function EventChat() {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [editing, setEditing] = useState<Message | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = useCallback((smooth = false) => {
     const el = listRef.current;
@@ -66,9 +69,15 @@ export function EventChat() {
       const { id: messageId } = (e as CustomEvent<{ id: number | null }>).detail;
       setMessages((list) => list?.filter((m) => m.id !== messageId) ?? list);
     };
+    const onUpdated = (e: Event) => {
+      const m = (e as CustomEvent<Message>).detail;
+      if (m.eventId === id) setMessages((list) => list?.map((x) => (x.id === m.id ? m : x)) ?? list);
+    };
+    window.addEventListener('galera:message-updated', onUpdated);
     window.addEventListener('galera:event-message', onNew);
     window.addEventListener('galera:message-deleted', onDeleted);
     return () => {
+      window.removeEventListener('galera:message-updated', onUpdated);
       window.removeEventListener('galera:event-message', onNew);
       window.removeEventListener('galera:message-deleted', onDeleted);
     };
@@ -82,6 +91,23 @@ export function EventChat() {
   const send = async () => {
     const value = text.trim();
     if (!value || sending) return;
+    if (editing) {
+      const target = editing;
+      setSending(true);
+      try {
+        if (value !== target.text) {
+          const updated = await editMessage(target.id, value);
+          setMessages((list) => list?.map((m) => (m.id === updated.id ? updated : m)) ?? list);
+        }
+        setEditing(null);
+        setText('');
+      } catch (err) {
+        toast.error(errorMessage(err));
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     setSending(true);
     setText('');
     try {
@@ -168,7 +194,28 @@ export function EventChat() {
                     {m.text}
                   </div>
                   <div className={`mt-1 flex items-center gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-[10px] text-ink-soft">{formatTime(m.createdAt)}</span>
+                    <span className="flex items-center gap-1 text-[10px] text-ink-soft">
+                      {formatTime(m.createdAt)}
+                      {m.editedAt && (
+                        <span title="Mensagem editada" aria-label="editada" className="flex items-center">
+                          <Pencil size={9} />
+                        </span>
+                      )}
+                    </span>
+                    {mine && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditing(m);
+                          setText(m.text ?? '');
+                          inputRef.current?.focus();
+                        }}
+                        className="rounded-full border border-sand bg-cream/80 p-1.5 text-ink-soft hover:border-terra hover:text-terra-dark"
+                        aria-label="Editar mensagem"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    )}
                     {(mine || isAdmin) &&
                       (confirmDelete === m.id ? (
                         <span className="flex items-center gap-1 text-[11px]">
@@ -198,8 +245,29 @@ export function EventChat() {
       </div>
 
       <div className="border-t border-sand bg-cream px-2 pt-2 pb-2">
+        {editing && (
+          <div className="mx-1 mb-1.5 flex items-center gap-2 rounded-2xl border-l-4 border-gold bg-gold/10 px-3 py-2">
+            <Pencil size={15} className="shrink-0 text-terra-dark" />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-terra-dark">Editando mensagem</div>
+              <div className="truncate text-sm text-ink-soft">{editing.text}</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setText('');
+              }}
+              className="rounded-full p-1.5 text-ink-soft hover:bg-cream"
+              aria-label="Cancelar edição"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
         <div className="flex items-end gap-1">
           <textarea
+            ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKey}
@@ -215,9 +283,9 @@ export function EventChat() {
             onClick={send}
             disabled={!text.trim() || sending || !event}
             className="flex size-11 items-center justify-center rounded-full bg-terra-dark text-cream transition disabled:opacity-40"
-            aria-label="Enviar"
+            aria-label={editing ? 'Salvar edição' : 'Enviar'}
           >
-            <SendHorizonal size={20} />
+            {editing ? <Check size={20} /> : <SendHorizonal size={20} />}
           </button>
         </div>
       </div>

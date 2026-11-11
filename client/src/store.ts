@@ -97,6 +97,7 @@ interface State {
   loadOlderMessages: () => Promise<void>;
   sendMessage: (text: string, extra?: { replyTo?: Message | null; mentions?: string[] }) => Promise<void>;
   deleteMessage: (id: number) => Promise<void>;
+  editMessage: (id: number, text: string, mentions?: string[]) => Promise<Message>;
   deletePhoto: (id: string) => Promise<void>;
   toggleReaction: (messageId: number, emoji: string) => Promise<Reaction[]>;
   loadPhotos: () => Promise<void>;
@@ -344,6 +345,12 @@ export const useStore = create<State>((set, get) => ({
     }
   },
 
+  async editMessage(id, text, mentions) {
+    const res = await api<{ message: Message }>(`/api/messages/${id}`, { method: 'PATCH', json: { text, mentions } });
+    if (!res.message.eventId) set((s) => ({ messages: s.messages.map((m) => (m.id === id ? res.message : m)) }));
+    return res.message;
+  },
+
   async deleteMessage(id) {
     await api(`/api/messages/${id}`, { method: 'DELETE' });
     set((s) => {
@@ -458,6 +465,17 @@ export const useStore = create<State>((set, get) => ({
       socket.on('event:message', ({ eventId, message }: { eventId: string; message: Message }) => {
         set((s) => ({ events: s.events.map((e) => (e.id === eventId ? { ...e, messageCount: (e.messageCount ?? 0) + 1 } : e)) }));
         window.dispatchEvent(new CustomEvent('galera:event-message', { detail: { eventId, message } }));
+      });
+
+      // Mensagem editada: troca no mural (se estiver carregada) e avisa a conversa do combinado
+      socket.on('message:updated', (m: Message) => {
+        if (!m.eventId) {
+          set((s) => ({
+            messages: s.messages.map((x) => (x.id === m.id ? m : x)),
+            photos: m.photo ? s.photos.map((p) => (p.id === m.photo!.id ? { ...p, caption: m.photo!.caption } : p)) : s.photos,
+          }));
+        }
+        window.dispatchEvent(new CustomEvent('galera:message-updated', { detail: m }));
       });
 
       socket.on('message:deleted', ({ id, photoId }: { id: number | null; photoId: string | null }) => {
