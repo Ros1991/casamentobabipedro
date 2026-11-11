@@ -5,6 +5,7 @@ import { Toasts } from './components/Toasts';
 import { Admin } from './pages/Admin';
 import { Agenda } from './pages/Agenda';
 import { Enter } from './pages/Enter';
+import { EventChat } from './pages/EventChat';
 import { Fotos } from './pages/Fotos';
 import { Home } from './pages/Home';
 import { Mapa } from './pages/Mapa';
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="mapa" element={<Mapa />} />
             <Route path="fotos" element={<Fotos />} />
             <Route path="agenda" element={<Agenda />} />
+            <Route path="agenda/:id/conversa" element={<EventChat />} />
             <Route path="chegadas" element={<Navigate to="/agenda?tab=chegadas" replace />} />
             <Route path="perfil" element={<Perfil />} />
             <Route path="admin" element={<Admin />} />

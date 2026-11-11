@@ -454,7 +454,14 @@ export const useStore = create<State>((set, get) => ({
         }
       });
 
+      // Conversa de um combinado: atualiza o contador do cartão e avisa a tela da conversa, se estiver aberta
+      socket.on('event:message', ({ eventId, message }: { eventId: string; message: Message }) => {
+        set((s) => ({ events: s.events.map((e) => (e.id === eventId ? { ...e, messageCount: (e.messageCount ?? 0) + 1 } : e)) }));
+        window.dispatchEvent(new CustomEvent('galera:event-message', { detail: { eventId, message } }));
+      });
+
       socket.on('message:deleted', ({ id, photoId }: { id: number | null; photoId: string | null }) => {
+        window.dispatchEvent(new CustomEvent('galera:message-deleted', { detail: { id } }));
         set((s) => ({
           messages: s.messages.filter((m) => m.id !== id && (!photoId || m.photo?.id !== photoId)),
           photos: photoId ? s.photos.filter((p) => p.id !== photoId) : s.photos,

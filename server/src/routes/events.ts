@@ -5,8 +5,8 @@ import { isAdmin, requireGuest } from '../auth.js';
 import { db } from '../db/index.js';
 import { eventRsvps, events, guests, messages } from '../db/schema.js';
 import type { EventDTO } from '../dto.js';
-import { formatEventDate, notifyNewMessage, notifyOfficialEvent } from '../push.js';
-import { loadEvent, loadEvents, loadMessage } from '../queries.js';
+import { formatEventDate, notifyEventChat, notifyNewMessage, notifyOfficialEvent } from '../push.js';
+import { loadEvent, loadEvents, loadMessage, loadMessages } from '../queries.js';
 import { broadcast } from '../realtime.js';
 import { dateStr, num, str, timeStr, validLatLng } from '../validate.js';
 
@@ -169,6 +169,33 @@ export default async function eventRoutes(app: FastifyInstance): Promise<void> {
       const dto = loadEvent(id)!;
       broadcast('event:upsert', dto);
       return { event: dto };
+    },
+  );
+
+  /** Conversa do combinado: para a galera daquele programa combinar os detalhes sem encher o mural geral. */
+  app.get('/api/events/:id/messages', { preHandler: requireGuest }, async (request, reply) => {
+    const id = (request.params as { id: string }).id;
+    const event = db.select().from(events).where(eq(events.id, id)).get();
+    if (!event || event.deletedAt) return reply.code(404).send({ error: 'not_found', message: 'Combinado não encontrado.' });
+    return { messages: loadMessages({ eventId: id, limit: 300 }).reverse() };
+  });
+
+  app.post(
+    '/api/events/:id/messages',
+    { preHandler: requireGuest, config: { rateLimit: { max: 40, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const id = (request.params as { id: string }).id;
+      const event = loadEvent(id);
+      if (!event || db.select().from(events).where(eq(events.id, id)).get()?.deletedAt) {
+        return reply.code(404).send({ error: 'not_found', message: 'Combinado não encontrado.' });
+      }
+      const text = str(((request.body ?? {}) as Record<string, unknown>).text, 2000);
+      if (!text) return reply.code(400).send({ error: 'text', message: 'Escreva alguma coisa.' });
+      const result = db.insert(messages).values({ guestId: request.guest!.id, eventId: id, text, createdAt: Date.now() }).run();
+      const dto = loadMessage(Number(result.lastInsertRowid))!;
+      broadcast('event:message', { eventId: id, message: dto });
+      void notifyEventChat(event, dto);
+      return { message: dto };
     },
   );
 

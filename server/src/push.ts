@@ -83,6 +83,38 @@ export async function notifyOfficialEvent(event: EventDTO, action: 'new' | 'upda
 }
 
 /**
+ * Conversa de um combinado: avisa só quem respondeu "vou" ou "talvez" (e quem criou), se não estiver
+ * com o app aberto. Mesmo limite de 2 minutos por aparelho do mural.
+ */
+export async function notifyEventChat(event: EventDTO, message: MessageDTO): Promise<void> {
+  if (!pushEnabled) return;
+  const now = Date.now();
+  const online = new Set(onlineGuestIds());
+  const group = new Set([event.createdBy.id, ...event.rsvps.filter((r) => r.status !== 'no').map((r) => r.guestId)]);
+  const targets = db
+    .select()
+    .from(pushSubscriptions)
+    .all()
+    .filter(
+      (s) =>
+        group.has(s.guestId) &&
+        s.guestId !== message.guestId &&
+        !online.has(s.guestId) &&
+        (!s.lastNotifiedAt || now - s.lastNotifiedAt > THROTTLE_MS),
+    );
+  if (targets.length === 0) return;
+  const payload = JSON.stringify({
+    title: event.title,
+    body: `${firstName(message.guest.name)}: ${message.text ?? ''}`.slice(0, 180),
+    url: `/agenda/${event.id}/conversa`,
+    tag: `conversa-${event.id}`,
+    icon: '/icons/icon-192.png',
+    badge: '/icons/badge.png',
+  });
+  await sendToAll(targets, payload);
+}
+
+/**
  * Avisa quem assinou e não está com o app aberto. Roda em segundo plano (não bloqueia a resposta).
  */
 /**

@@ -84,6 +84,8 @@ export interface MessageDTO {
   replyTo: ReplyPreviewDTO | null;
   /** Ids dos convidados marcados com @ */
   mentions: string[];
+  /** Combinado a que a mensagem pertence (null = mural geral) */
+  eventId: string | null;
 }
 
 export function guestLite(g: Guest): GuestLiteDTO {
@@ -168,6 +170,8 @@ export interface EventDTO {
   updatedAt: number;
   rsvps: RsvpDTO[];
   counts: { yes: number; maybe: number; no: number; people: number };
+  /** Mensagens na conversa do combinado */
+  messageCount: number;
 }
 
 export function accommodationDTO(a: Accommodation) {

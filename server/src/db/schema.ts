@@ -96,6 +96,8 @@ export const messages = sqliteTable(
       .references(() => guests.id),
     text: text('text'),
     photoId: text('photo_id').references(() => photos.id),
+    /** Conversa de um combinado da agenda (null = mural geral) */
+    eventId: text('event_id'),
     /** Mensagem à qual esta responde (como no WhatsApp) */
     replyToId: integer('reply_to_id'),
     /** Ids dos convidados marcados com @ no texto */

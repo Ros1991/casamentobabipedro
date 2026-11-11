@@ -1,0 +1,1 @@
+ALTER TABLE `messages` ADD `event_id` text;

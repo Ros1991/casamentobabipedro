@@ -31,6 +31,8 @@ export function Layout() {
   const config = useStore((s) => s.config);
   const isMap = location.pathname.startsWith('/mapa');
   const isMural = location.pathname.startsWith('/mural');
+  // Telas de conversa ocupam a altura toda e rolam por dentro
+  const isChat = isMural || location.pathname.endsWith('/conversa');
 
   useEffect(() => {
     setMuralActive(isMural);
@@ -96,7 +98,7 @@ export function Layout() {
 
       {!isMap && <OfflineQueueBanner />}
 
-      <main className={`min-h-0 flex-1 ${isMap || isMural ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
+      <main className={`min-h-0 flex-1 ${isMap || isChat ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
         <Outlet />
       </main>
 

@@ -270,6 +270,7 @@ Seguir o site oficial para o convidado sentir que é "o mesmo casamento":
 - Infra: Dockerfile, railway.json, workflow do GitHub Actions (build + deploy opcional via token), PWA (manifest e ícones).
 
 - **Agenda / Combinados** (09/11): combinados dos noivos (oficiais) e da galera, com Vou/Talvez/Não vou, contagem por pessoas (acompanhantes incluídos), destaque no Início, pino no mapa, telão, mensagem automática no mural, aviso push geral para os oficiais e CSV de confirmados no admin. "Quem chega quando" virou aba da Agenda.
+- **Conversa por combinado e pendentes** (11/11): cada combinado tem a sua conversa (avisos só para quem respondeu "vou" ou "talvez"); admins veem quem ainda não decidiu.
 - **Mural com respostas e menções** (10/11): responder a uma mensagem (citação no balão, toque leva à original) e marcar pessoas com `@`; quem é marcado ou respondido recebe aviso próprio.
 - **Lista de confirmados** (09/11, noite): importação da planilha dos noivos, entrada só com o WhatsApp (busca por nome como plano B), CPF opcional para o check-in, Guia do Convidado em PDF e ícone com o brasão.
 - Extras (09/11, tarde): botão "Apagar" evidente e moderação de fotos no admin; **app instalável** (service worker + convite de instalação; passo a passo no iPhone) e **avisos de novas mensagens** via Web Push (no iPhone só com o app instalado, regra da Apple), com aviso local quando o app está em segundo plano.

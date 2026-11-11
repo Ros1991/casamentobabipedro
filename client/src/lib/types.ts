@@ -129,6 +129,8 @@ export interface Message {
   replyTo?: ReplyPreview | null;
   /** Ids dos convidados marcados com @ */
   mentions?: string[];
+  /** Combinado a que a mensagem pertence (null = mural geral) */
+  eventId?: string | null;
   /** Só no cliente: envio em andamento */
   pending?: boolean;
 }
@@ -193,6 +195,8 @@ export interface EventItem {
   updatedAt: number;
   rsvps: EventRsvp[];
   counts: { yes: number; maybe: number; no: number; people: number };
+  /** Mensagens na conversa do combinado */
+  messageCount?: number;
 }
 
 export interface EventPayload {

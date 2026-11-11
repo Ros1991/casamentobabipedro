@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Clock, HelpCircle, MapPin, Minus, MoreHorizontal, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { CalendarDays, Check, Clock, HelpCircle, MapPin, MessagesSquare, Minus, MoreHorizontal, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '../lib/api';
@@ -42,6 +42,13 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
   const canManage = !!me && (event.createdBy.id === me.id || isAdmin);
   const going = event.rsvps.filter((r) => r.status === 'yes');
   const isPast = event.date < new Date().toISOString().slice(0, 10);
+  // Só admins: quem ainda não respondeu a este combinado (quem criou não entra)
+  const pending = isAdmin
+    ? Object.values(guests)
+        .filter((g) => g.id !== event.createdBy.id && !event.rsvps.some((r) => r.guestId === g.id))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+  const pendingPeople = pending.reduce((n, g) => n + g.partySize, 0);
 
   const respond = async (status: RsvpStatus | 'none', peopleCount?: number) => {
     setBusy(true);
@@ -268,6 +275,17 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
         </span>
       </button>
 
+      {/* Conversa só deste combinado */}
+      <Link
+        to={`/agenda/${event.id}/conversa`}
+        className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-terra-light bg-cream px-4 py-2.5 text-sm font-semibold text-terra-dark"
+      >
+        <MessagesSquare size={16} /> Conversa do combinado
+        {(event.messageCount ?? 0) > 0 && (
+          <span className="rounded-full bg-terra px-2 py-0.5 text-[11px] font-bold text-cream">{event.messageCount}</span>
+        )}
+      </Link>
+
       <BottomSheet open={whoOpen} onClose={() => setWhoOpen(false)} title={event.title}>
         {(['yes', 'maybe', 'no'] as const).map((status) => {
           const list = event.rsvps.filter((r) => r.status === status);
@@ -302,6 +320,28 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
           );
         })}
         {event.rsvps.length === 0 && <p className="text-sm text-ink-soft">Ninguém respondeu ainda. Seja a primeira pessoa!</p>}
+        {isAdmin && pending.length > 0 && (
+          <div className="mt-2 rounded-2xl border border-dashed border-terra-light p-3">
+            <div className="mb-1.5 flex flex-wrap items-center gap-x-2 text-xs font-bold tracking-widest text-terra uppercase">
+              Ainda não decidiram ({pendingPeople})
+              <span className="rounded-full bg-terra-pale px-2 py-0.5 text-[10px] tracking-normal text-terra-dark normal-case">só admins veem</span>
+            </div>
+            <ul className="divide-y divide-sand/70">
+              {pending.map((g) => (
+                <li key={g.id} className="flex items-center gap-3 py-2">
+                  <Avatar guest={g} size={32} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-ink">{g.name}</span>
+                    <span className="block text-xs text-ink-soft">
+                      {g.partySize > 1 ? `${g.partySize} pessoas` : '1 pessoa'}
+                      {!g.joined && ' · ainda não entrou no app'}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </BottomSheet>
     </article>
   );

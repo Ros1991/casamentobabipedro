@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from './db/index.js';
 import {
   eventRsvps,
@@ -30,8 +30,9 @@ export interface PhotoWithGuestDTO extends PhotoDTO {
 
 const UNKNOWN_GUEST: GuestLiteDTO = { id: '', name: 'Convidado', avatarUrl: null };
 
-export function loadMessages(opts: { beforeId?: number; limit: number }): MessageDTO[] {
-  const conds = [isNull(messages.deletedAt)];
+/** Mensagens do mural geral ou, com eventId, da conversa de um combinado. */
+export function loadMessages(opts: { beforeId?: number; limit: number; eventId?: string }): MessageDTO[] {
+  const conds = [isNull(messages.deletedAt), opts.eventId ? eq(messages.eventId, opts.eventId) : isNull(messages.eventId)];
   if (opts.beforeId) conds.push(lt(messages.id, opts.beforeId));
   const rows = db
     .select()
@@ -109,6 +110,7 @@ function hydrateMessages(rows: Message[]): MessageDTO[] {
     return {
       replyTo: replyPreview(r.replyToId),
       mentions: r.mentions ?? [],
+      eventId: r.eventId,
       id: r.id,
       guestId: r.guestId,
       guest: g ? guestLite(g) : { ...UNKNOWN_GUEST, id: r.guestId },
@@ -162,6 +164,15 @@ function hydrateEvents(rows: EventRow[]): EventDTO[] {
       .all()
       .map((g) => [g.id, g]),
   );
+  const chatCounts = new Map(
+    db
+      .select({ eventId: messages.eventId, n: count() })
+      .from(messages)
+      .where(and(inArray(messages.eventId, ids), isNull(messages.deletedAt)))
+      .groupBy(messages.eventId)
+      .all()
+      .map((c) => [c.eventId, c.n]),
+  );
   const byEvent = new Map<string, RsvpDTO[]>();
   for (const r of rsvpRows) {
     const list = byEvent.get(r.eventId) ?? [];
@@ -192,6 +203,7 @@ function hydrateEvents(rows: EventRow[]): EventDTO[] {
         no: rsvps.filter((x) => x.status === 'no').length,
         people: yes.reduce((sum, x) => sum + x.peopleCount, 0),
       },
+      messageCount: chatCounts.get(r.id) ?? 0,
     };
   });
 }
