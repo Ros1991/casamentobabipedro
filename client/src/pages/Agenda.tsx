@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { EventCard } from '../components/EventCard';
 import { EventForm } from '../components/EventForm';
-import { toDateOnly } from '../lib/format';
+import { todayOnly } from '../lib/format';
 import type { EventItem } from '../lib/types';
 import { useStore } from '../store';
 import { Chegadas } from './Chegadas';
@@ -61,7 +61,7 @@ function Combinados() {
     if (!guestsLoaded) void loadGuests().catch(() => undefined);
   }, [eventsLoaded, guestsLoaded, loadEvents, loadGuests]);
 
-  const today = toDateOnly(new Date());
+  const today = todayOnly();
   const { upcoming, past } = useMemo(() => {
     const upcomingList = events.filter((e) => e.date >= today);
     // Oficiais primeiro dentro do mesmo dia

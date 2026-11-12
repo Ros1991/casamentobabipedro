@@ -22,7 +22,7 @@ import { EventCard } from '../components/EventCard';
 import { InstallBanner } from '../components/InstallBanner';
 import { NotificationsCard } from '../components/NotificationsCard';
 import { PhotoCapture } from '../components/PhotoCapture';
-import { addDays, countPeople, firstName, formatDateShort, toDateOnly } from '../lib/format';
+import { addDays, countPeople, firstName, formatDateShort, todayOnly } from '../lib/format';
 import { warmUpLocationPermission } from '../lib/geo';
 import { toast } from '../lib/toast';
 import { useStore } from '../store';
@@ -62,7 +62,9 @@ export function Home() {
   }, [guestsLoaded, photosLoaded, messagesLoaded, eventsLoaded, loadGuests, loadPhotos, loadMessages, loadEvents]);
 
   const guestList = useMemo(() => Object.values(guests), [guests]);
-  const today = toDateOnly(new Date());
+  const today = todayOnly();
+  // Programação: os dias que já passaram somem da lista
+  const scheduleLeft = (config?.wedding.schedule ?? []).filter((item) => item.date >= today);
   /** Combinados dos noivos que ainda estão por vir e que eu não respondi */
   const pendingOfficial = useMemo(
     () => events.filter((e) => e.date >= today && e.isOfficial && !e.rsvps.some((r) => r.guestId === me?.id)),
@@ -281,12 +283,13 @@ export function Home() {
           <p className="mt-2 text-sm text-ink">{w.dressCodeDetails}</p>
         </div>
 
+        {scheduleLeft.length > 0 && (
         <div className="rounded-3xl border border-sand bg-white/60 p-4 shadow-soft">
           <div className="flex items-center gap-2 font-serif text-xl font-semibold text-terra-dark">
             <CalendarDays size={20} /> Programação do fim de semana
           </div>
           <ol className="mt-3 space-y-3">
-            {w.schedule.map((item) => (
+            {scheduleLeft.map((item) => (
               <li key={item.date} className="flex gap-3">
                 <span className="mt-1.5 size-2 flex-none rounded-full bg-terra" />
                 <div className="min-w-0">
@@ -298,6 +301,7 @@ export function Home() {
             ))}
           </ol>
         </div>
+        )}
 
         {me.arrivalDate && (
           <div className="rounded-3xl border border-sand bg-white/60 p-4 text-sm shadow-soft">

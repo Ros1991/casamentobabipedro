@@ -32,6 +32,23 @@ export function parseDateOnly(value: string): Date {
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
+/**
+ * "Hoje" para a agenda (YYYY-MM-DD, no horário do aparelho). Para testar como o app fica em outro dia,
+ * abra qualquer tela com ?hoje=2026-11-21 no endereço: vale até fechar a aba (ou abrir com ?hoje=agora).
+ */
+export function todayOnly(): string {
+  try {
+    const param = new URLSearchParams(window.location.search).get('hoje');
+    if (param === 'agora') sessionStorage.removeItem('galera:hoje');
+    else if (param && /^\d{4}-\d{2}-\d{2}$/.test(param)) sessionStorage.setItem('galera:hoje', param);
+    const simulated = sessionStorage.getItem('galera:hoje');
+    if (simulated) return simulated;
+  } catch {
+    /* sem storage */
+  }
+  return toDateOnly(new Date());
+}
+
 export function toDateOnly(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

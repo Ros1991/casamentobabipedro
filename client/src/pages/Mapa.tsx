@@ -9,7 +9,7 @@ import { PhotoViewer } from '../components/PhotoViewer';
 import { BaseMap, FitBounds, FlyTo } from '../components/map/MapBase';
 import { PhotoClusterLayer } from '../components/map/PhotoClusterLayer';
 import { placeIcon } from '../components/map/icons';
-import { companionBadge, countPeople, firstName, formatDayMonth, formatEventWhen, joinNames, toDateOnly, whatsappLink } from '../lib/format';
+import { companionBadge, countPeople, firstName, formatDayMonth, formatEventWhen, joinNames, todayOnly, whatsappLink } from '../lib/format';
 import type { Accommodation, EventItem, GuestPublic, Photo } from '../lib/types';
 import { useStore } from '../store';
 
@@ -64,7 +64,7 @@ export function Mapa() {
     if (!eventsLoaded) void loadEvents().catch(() => undefined);
   }, [guestsLoaded, photosLoaded, eventsLoaded, loadGuests, loadPhotos, loadEvents]);
 
-  const today = toDateOnly(new Date());
+  const today = todayOnly();
   const mapEvents = useMemo(
     () => events.filter((e) => e.placeLat !== null && e.placeLng !== null && e.date >= today),
     [events, today],

@@ -2,7 +2,7 @@ import { CalendarDays, Check, Clock, HelpCircle, Hourglass, MapPin, MessagesSqua
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '../lib/api';
-import { formatDateLong, joinNames } from '../lib/format';
+import { formatDateLong, joinNames, todayOnly } from '../lib/format';
 import { toast } from '../lib/toast';
 import type { EventItem, RsvpStatus } from '../lib/types';
 import { useStore } from '../store';
@@ -42,7 +42,8 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
   const partySize = me?.partySize ?? 1;
   const canManage = !!me && (event.createdBy.id === me.id || isAdmin);
   const going = event.rsvps.filter((r) => r.status === 'yes');
-  const isPast = event.date < new Date().toISOString().slice(0, 10);
+  // Passou = dia seguinte em diante, no horário do aparelho (no dia do programa ele continua ativo até a meia-noite)
+  const isPast = event.date < todayOnly();
   // Só admins: quem ainda não respondeu a este combinado (quem criou não entra)
   const pending = isAdmin
     ? Object.values(guests)
