@@ -224,11 +224,12 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
           const guestId = idByKey.get(str(r.guestKey, 120) ?? '');
           const status = str(r.status, 10);
           if (!eventId || !guestId || !status || !eventIds.has(eventId) || !STATUSES.has(status)) continue;
+          // Quem já entrou no app responde por si: a importação não cria nem altera as presenças dessa pessoa
+          if (claimedKeys.has(str(r.guestKey, 120) ?? '')) continue;
           const where = and(eq(eventRsvps.eventId, eventId), eq(eventRsvps.guestId, guestId));
           const existing = tx.select().from(eventRsvps).where(where).get();
           const peopleCount = Math.max(1, Math.min(20, Math.round(num(r.peopleCount) ?? 1)));
           if (existing) {
-            if (claimedKeys.has(str(r.guestKey, 120) ?? '')) continue; // a pessoa já responde por si no app
             tx.update(eventRsvps).set({ status, peopleCount, updatedAt: now }).where(where).run();
           } else {
             tx.insert(eventRsvps).values({ eventId, guestId, status, peopleCount, updatedAt: now }).run();

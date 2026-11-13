@@ -168,9 +168,12 @@ function answersOf(p) {
   else if (pagode === 'nao') out['prog-pagode'] = 'no';
   else if (pagode) out['prog-pagode'] = 'maybe';
   const dia = fold(p.sabadoDia);
-  if (dia.includes('beach park')) out['prog-beach-park'] = 'yes';
-  else if (dia.includes('buggy')) out['prog-buggy'] = 'yes';
-  else if (dia.includes('resort')) out['prog-resort'] = 'yes';
+  // Os três programas de sábado de dia são alternativas: quem escolheu um não vai nos outros dois;
+  // quem já terá ido embora não vai em nenhum; quem marcou "Não decidi" fica sem resposta (aparece como pendente).
+  const saturday = ['prog-beach-park', 'prog-buggy', 'prog-resort'];
+  const chosen = dia.includes('beach park') ? 'prog-beach-park' : dia.includes('buggy') ? 'prog-buggy' : dia.includes('resort') ? 'prog-resort' : null;
+  if (chosen) for (const id of saturday) out[id] = id === chosen ? 'yes' : 'no';
+  else if (dia.includes('ido embora')) for (const id of saturday) out[id] = 'no';
   const noite = fold(p.sabadoNoite);
   if (noite.startsWith('sim') || noite.startsWith('animo')) out['prog-sabado-noite'] = 'yes';
   else if (noite.startsWith('ja tenho')) out['prog-sabado-noite'] = 'no';
