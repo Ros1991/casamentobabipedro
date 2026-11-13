@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { requireAdmin } from '../auth.js';
 import { config } from '../config.js';
 import { db } from '../db/index.js';
-import { accommodations, guests, messages, photos } from '../db/schema.js';
+import { accommodations, eventRsvps, events, guests, messages, photos } from '../db/schema.js';
 import { accommodationDTO, countPeople, guestPublic } from '../dto.js';
 import { formatCpf } from '../cpf.js';
 import { formatPhone, isPlaceholderPhone } from '../phone.js';
@@ -145,6 +145,59 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
     return reply
       .type('text/csv; charset=utf-8')
       .header('Content-Disposition', 'attachment; filename="convidados.csv"')
+      .send(csv);
+  });
+
+  /**
+   * Planilha de pessoas para o check-in: uma linha por pessoa (titular e cada acompanhante), com o CPF de cada um.
+   * Titulares primeiro, seguidos dos seus acompanhantes; ordenado pelo nome do convite.
+   */
+  app.get('/api/admin/pessoas.csv', async (_request, reply) => {
+    const rows = db
+      .select({ guest: guests, accommodation: accommodations })
+      .from(guests)
+      .leftJoin(accommodations, eq(accommodations.id, guests.accommodationId))
+      .all()
+      // a conta "dos noivos", dona dos combinados importados, não é uma pessoa da lista
+      .filter((r) => r.guest.importKey !== 'noivos')
+      .sort((a, b) => (a.guest.inviteLabel ?? a.guest.name).localeCompare(b.guest.inviteLabel ?? b.guest.name) || a.guest.name.localeCompare(b.guest.name));
+
+    // Presenças por combinado (dos noivos), para a Babi ver tudo num arquivo só
+    const official = db.select().from(events).where(isNull(events.deletedAt)).orderBy(events.date, events.time).all().filter((e) => e.isOfficial);
+    const rsvpRows = db.select().from(eventRsvps).all();
+    const label: Record<string, string> = { yes: 'Vai', maybe: 'Talvez', no: 'Não vai' };
+    const answer = (guestId: string, eventId: string) => {
+      const r = rsvpRows.find((x) => x.guestId === guestId && x.eventId === eventId);
+      return r ? (r.status === 'yes' && r.peopleCount > 1 ? `Vai (${r.peopleCount})` : (label[r.status] ?? r.status)) : '';
+    };
+
+    const header = ['Nome', 'CPF', 'Tipo', 'Conta de', 'Convite', 'WhatsApp', 'Hospedagem', 'Cidade', 'Chegada', 'Saída', 'Entrou no app', ...official.map((e) => e.title)];
+    const lines = [header.join(';')];
+    let total = 0;
+    let withCpf = 0;
+    for (const { guest: g, accommodation: a } of rows) {
+      const place = a ? a.name : (g.customPlaceLabel ?? '');
+      const city = a ? a.city : (g.customCity ?? '');
+      const phone = isPlaceholderPhone(g.phone) ? '' : formatPhone(g.phone);
+      // datas em dd/mm/aaaa, como o Excel e o Google Planilhas em português esperam
+      const br = (d: string | null) => (d ? d.split('-').reverse().join('/') : '');
+      const common = [g.inviteLabel ?? '', phone, place, city, br(g.arrivalDate), br(g.departureDate), g.claimedAt ? 'sim' : 'não'];
+      const people = [
+        { name: g.name, cpf: g.cpf, type: 'Titular', answers: official.map((e) => answer(g.id, e.id)) },
+        // as presenças são respondidas pela conta: nos acompanhantes a coluna fica vazia
+        ...(g.companions ?? []).map((name, i) => ({ name, cpf: g.companionCpfs?.[i] || null, type: 'Acompanhante', answers: official.map(() => '') })),
+      ];
+      for (const p of people) {
+        total++;
+        if (p.cpf) withCpf++;
+        lines.push([p.name, p.cpf ? formatCpf(p.cpf) : '', p.type, g.name, ...common, ...p.answers].map(csvCell).join(';'));
+      }
+    }
+    lines.push('', csvCell(`Total: ${total} pessoas, ${withCpf} com CPF, ${total - withCpf} sem CPF`));
+    const csv = '\uFEFF' + lines.join('\r\n');
+    return reply
+      .type('text/csv; charset=utf-8')
+      .header('Content-Disposition', `attachment; filename="pessoas-e-cpf-${new Date().toISOString().slice(0, 10)}.csv"`)
       .send(csv);
   });
 

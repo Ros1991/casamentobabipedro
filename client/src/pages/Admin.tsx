@@ -102,13 +102,21 @@ export function Admin() {
       )}
 
       <div className="flex flex-wrap gap-2">
-        <a href="/api/admin/guests.csv" download className="flex items-center gap-1.5 rounded-full bg-terra-dark px-4 py-2 text-sm font-semibold text-cream">
-          <Download size={15} /> Lista de convidados (CSV)
+        <a href="/api/admin/pessoas.csv" download className="flex items-center gap-1.5 rounded-full bg-terra-dark px-4 py-2 text-sm font-semibold text-cream">
+          <Download size={15} /> Planilha de pessoas e CPF
+        </a>
+        <a href="/api/admin/guests.csv" download className="flex items-center gap-1.5 rounded-full border border-terra px-4 py-2 text-sm font-semibold text-terra-dark">
+          <Download size={15} /> Lista por conta (CSV)
         </a>
         <a href="/api/admin/photos.zip" download className="flex items-center gap-1.5 rounded-full border border-terra px-4 py-2 text-sm font-semibold text-terra-dark">
           <Download size={15} /> Todas as fotos (ZIP)
         </a>
       </div>
+
+      <p className="-mt-2 text-xs text-ink-soft">
+        A planilha de pessoas abre no Excel e no Google Planilhas: uma linha por pessoa (titular e acompanhantes), com CPF, hospedagem, datas e
+        as respostas dos combinados.
+      </p>
 
       <section className="overflow-hidden rounded-3xl border border-sand bg-white/60">
         <div className="flex items-baseline justify-between border-b border-sand px-4 py-3">
