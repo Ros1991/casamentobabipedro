@@ -79,6 +79,8 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         phone: isPlaceholderPhone(r.guest.phone) ? '' : r.guest.phone,
         phoneFormatted: isPlaceholderPhone(r.guest.phone) ? '' : formatPhone(r.guest.phone),
         cpf: r.guest.cpf,
+        /** Quais acompanhantes já têm CPF (mesma ordem dos nomes) */
+        companionHasCpf: (r.guest.companions ?? []).map((_, i) => !!r.guest.companionCpfs?.[i]),
         inviteLabel: r.guest.inviteLabel,
         showPhone: r.guest.showPhone,
         accommodation: r.accommodation ? accommodationDTO(r.accommodation) : null,

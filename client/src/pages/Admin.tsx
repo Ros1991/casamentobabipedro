@@ -1,4 +1,4 @@
-import { CalendarDays, Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Check, Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -21,8 +21,31 @@ interface Stats {
 interface AdminGuest extends GuestPublic {
   phone: string;
   phoneFormatted: string;
+  cpf: string | null;
+  companionHasCpf: boolean[];
   showPhone: boolean;
   accommodation: Accommodation | null;
+}
+
+/** Marca se a pessoa já informou o CPF: check verde ou "sem CPF" discreto. */
+function CpfMark({ ok, small = false }: { ok: boolean; small?: boolean }) {
+  return ok ? (
+    <span
+      title="CPF informado"
+      aria-label="CPF informado"
+      className={`inline-flex items-center gap-0.5 rounded-full bg-emerald-100 font-bold text-emerald-700 ${small ? 'px-1 text-[9px]' : 'px-1.5 text-[10px]'}`}
+    >
+      <Check size={small ? 9 : 11} strokeWidth={3} /> CPF
+    </span>
+  ) : (
+    <span
+      title="Ainda não informou o CPF"
+      aria-label="Sem CPF"
+      className={`inline-flex items-center rounded-full border border-dashed border-sand text-ink-soft ${small ? 'px-1 text-[9px]' : 'px-1.5 text-[10px]'}`}
+    >
+      sem CPF
+    </span>
+  );
 }
 
 export function Admin() {
@@ -224,12 +247,23 @@ export function Admin() {
               <div className="min-w-0 flex-1 text-sm">
                 <div className="flex flex-wrap items-center gap-x-2">
                   <span className="font-semibold text-ink">{g.name}</span>
+                  <CpfMark ok={!!g.cpf} />
                   {g.isAdmin && <span className="rounded-full bg-terra-pale px-2 text-[10px] font-bold text-terra-dark uppercase">admin</span>}
                   {g.companions?.length > 0 && (
                     <span className="rounded-full bg-rose/10 px-2 text-[10px] font-bold text-rose uppercase">+{g.companions.length}</span>
                   )}
                 </div>
-                {g.companions?.length > 0 && <div className="text-ink-soft">Com {g.companions.join(', ')}</div>}
+                {g.companions?.length > 0 && (
+                  <div className="text-ink-soft">
+                    Com{' '}
+                    {g.companions.map((name, i) => (
+                      <span key={i} className="whitespace-nowrap">
+                        {name} <CpfMark ok={!!g.companionHasCpf?.[i]} small />
+                        {i < g.companions.length - 1 ? ', ' : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="text-ink-soft">
                   {g.phone ? (
                     <>
