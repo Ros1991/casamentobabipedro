@@ -24,6 +24,8 @@ export interface Wedding {
   instagramUrl: string;
   guideUrl: string;
   schedule: ScheduleItem[];
+  /** Combinados que são alternativas entre si (a pessoa escolhe um) */
+  alternatives: { label: string; eventIds: string[] }[];
   mapCenter: { lat: number; lng: number };
   mapZoom: number;
   timeZone: string;

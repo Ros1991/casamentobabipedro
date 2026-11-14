@@ -22,6 +22,11 @@ export const WEDDING = {
   dressCodeDetails:
     'Casamento ao ar livre, de frente para a praia, com clima leve sem perder a elegância. Cerimônia e festa na grama, com vento moderado: se for de salto, prefira salto grosso, plataforma ou anabela.',
   verse: 'Dizem que os opostos se atraem. A gente prefere dizer que se complementam.',
+  /**
+   * Combinados que são alternativas entre si (a pessoa escolhe um): quem disse "vou" em um deles
+   * não conta como indeciso nos outros.
+   */
+  alternatives: [{ label: 'Sábado de dia', eventIds: ['prog-beach-park', 'prog-buggy', 'prog-resort'] }],
   /** Programação do fim de semana (site oficial) */
   schedule: [
     { date: '2026-11-19', label: 'Quinta, 19/11', title: 'Cerimônia e festa', detail: 'Das 15h30 às 23h, no Beach Club Aquiraz Riviera' },

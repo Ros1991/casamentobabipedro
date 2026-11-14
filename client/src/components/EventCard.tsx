@@ -16,6 +16,8 @@ interface Props {
   compact?: boolean;
 }
 
+const NO_ALTERNATIVES: { label: string; eventIds: string[] }[] = [];
+
 const STATUS_LABEL: Record<string, string> = { yes: 'Vou', maybe: 'Talvez', no: 'Não vou' };
 
 /** Botão único mostrado depois que a pessoa responde. */
@@ -29,6 +31,8 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
   const me = useStore((s) => s.me);
   const isAdmin = useStore((s) => s.isAdmin);
   const guests = useStore((s) => s.guests);
+  const allEvents = useStore((s) => s.events);
+  const alternatives = useStore((s) => s.config?.wedding.alternatives) ?? NO_ALTERNATIVES;
   const setRsvp = useStore((s) => s.setRsvp);
   const deleteEvent = useStore((s) => s.deleteEvent);
   const [busy, setBusy] = useState(false);
@@ -45,9 +49,12 @@ export function EventCard({ event, onEdit, compact = false }: Props) {
   // Passou = dia seguinte em diante, no horário do aparelho (no dia do programa ele continua ativo até a meia-noite)
   const isPast = event.date < todayOnly();
   // Só admins: quem ainda não respondeu a este combinado (quem criou não entra)
+  // Em combinados que são alternativas (ex.: os três programas de sábado de dia), quem já disse "vou" em outro não é indeciso
+  const siblings = isAdmin ? allEvents.filter((e) => e.id !== event.id && alternatives.some((a) => a.eventIds.includes(event.id) && a.eventIds.includes(e.id))) : [];
+  const choseSibling = (guestId: string) => siblings.some((e) => e.rsvps.some((r) => r.guestId === guestId && r.status === 'yes'));
   const pending = isAdmin
     ? Object.values(guests)
-        .filter((g) => g.id !== event.createdBy.id && !event.rsvps.some((r) => r.guestId === g.id))
+        .filter((g) => g.id !== event.createdBy.id && !event.rsvps.some((r) => r.guestId === g.id) && !choseSibling(g.id))
         .sort((a, b) => a.name.localeCompare(b.name))
     : [];
   const pendingPeople = pending.reduce((n, g) => n + g.partySize, 0);

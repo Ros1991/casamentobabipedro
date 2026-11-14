@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { CalendarDays, Check, Copy, Download, Images, MessageCircle, RefreshCw, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -59,6 +59,7 @@ export function Admin() {
   const events = useStore((s) => s.events);
   const eventsLoaded = useStore((s) => s.eventsLoaded);
   const loadEvents = useStore((s) => s.loadEvents);
+  const alternatives = useStore((s) => s.config?.wedding.alternatives);
   const [stats, setStats] = useState<Stats | null>(null);
   const [guests, setGuests] = useState<AdminGuest[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +88,34 @@ export function Admin() {
       if (!eventsLoaded) void loadEvents().catch(() => undefined);
     }
   }, [isAdmin, photosLoaded, loadPhotos, eventsLoaded, loadEvents]);
+
+  // Indecisos: para cada grupo de combinados alternativos (ex.: sábado de dia), quem ainda não escolheu nenhum.
+  // Fica de fora quem disse "vou"/"talvez" em algum deles e quem disse "não vou" em todos.
+  const undecided = (alternatives ?? [])
+    .map((group) => {
+      const groupEvents = events.filter((e) => group.eventIds.includes(e.id));
+      const people = guests
+        .filter((g) => g.name !== 'Pedro & Babi' || g.joined)
+        .filter((g) => {
+          const answers = groupEvents.map((e) => e.rsvps.find((r) => r.guestId === g.id)?.status ?? null);
+          return !answers.some((a) => a === 'yes' || a === 'maybe') && answers.some((a) => a === null);
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return { ...group, groupEvents, people, total: people.reduce((n, g) => n + g.partySize, 0) };
+    })
+    .filter((g) => g.groupEvents.length > 0);
+
+  const copyUndecided = async (group: (typeof undecided)[number]) => {
+    const text = group.people
+      .map((g) => `${g.name}${g.companions?.length ? ` (+ ${g.companions.join(', ')})` : ''}${g.phoneFormatted ? ` - ${g.phoneFormatted}` : ''}`)
+      .join('\n');
+    try {
+      await navigator.clipboard.writeText(`Indecisos - ${group.label} (${group.total} pessoas)\n${text}`);
+      toast.success('Lista copiada! É só colar no WhatsApp.');
+    } catch {
+      toast.error('Não consegui copiar. Tente pelo navegador.');
+    }
+  };
 
   if (authStatus === 'authed' && !isAdmin) return <Navigate to="/" replace />;
 
@@ -140,6 +169,59 @@ export function Admin() {
         A planilha de pessoas abre no Excel e no Google Planilhas: uma linha por pessoa (titular e acompanhantes), com CPF, hospedagem, datas e
         as respostas dos combinados.
       </p>
+
+      {undecided.map((group) => (
+        <section key={group.label} className="overflow-hidden rounded-3xl border border-terra-light bg-terra-pale/40">
+          <header className="flex flex-wrap items-center justify-between gap-2 border-b border-sand px-4 py-3">
+            <div>
+              <h2 className="font-serif text-xl font-semibold text-terra-dark">
+                Indecisos: {group.label} ({group.total})
+              </h2>
+              <p className="text-xs text-ink-soft">
+                Quem ainda não escolheu entre {group.groupEvents.map((e) => e.title).join(', ')}. Não entra quem já escolheu um deles nem quem disse que
+                não vai em nenhum.
+              </p>
+            </div>
+            {group.people.length > 0 && (
+              <button
+                type="button"
+                onClick={() => copyUndecided(group)}
+                className="flex items-center gap-1.5 rounded-full bg-terra-dark px-3 py-1.5 text-xs font-semibold text-cream"
+              >
+                <Copy size={13} /> Copiar lista
+              </button>
+            )}
+          </header>
+          {group.people.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-ink-soft">Ninguém indeciso. 🎉</p>
+          ) : (
+            <ul className="divide-y divide-sand/70">
+              {group.people.map((g) => (
+                <li key={g.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
+                  <Avatar guest={g} size={32} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-ink">
+                      {g.name}
+                      {g.companions?.length > 0 && <span className="ml-1 font-normal text-ink-soft">+ {g.companions.join(', ')}</span>}
+                    </span>
+                    <span className="block text-xs text-ink-soft">{g.joined ? 'já entrou no app' : 'ainda não entrou no app'}</span>
+                  </span>
+                  {g.phone && (
+                    <a
+                      href={whatsappLink(g.phone, `Oi ${g.name.split(' ')[0]}! Já decidiu o que vai fazer no sábado? Tem Beach Park, passeio de buggy ou dia de resort. Responde lá no app: https://babitos.com.br/agenda`)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 rounded-full border border-terra px-3 py-1 text-xs font-semibold text-terra-dark"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
 
       <section className="overflow-hidden rounded-3xl border border-sand bg-white/60">
         <div className="flex items-baseline justify-between border-b border-sand px-4 py-3">
