@@ -43,7 +43,7 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
     const reset = body.reset === true;
     /** Contas com ajuste manual: datas e acompanhantes valem mesmo para quem já entrou no app */
     const forceKeys = new Set(Array.isArray(body.forceKeys) ? body.forceKeys.filter((k): k is string => typeof k === 'string') : []);
-    const summary = { wiped: null as null | Record<string, number>, created: 0, updated: 0, keptClaimed: 0, forced: 0, linkedExisting: 0, removed: 0, events: 0, rsvps: 0, warnings: [] as string[] };
+    const summary = { wiped: null as null | Record<string, number>, created: 0, updated: 0, keptClaimed: 0, forced: 0, renamed: 0, cpfsFilled: 0, cpfsAlready: 0, cpfsDifferent: [] as string[], cpfsNotFound: [] as string[], linkedExisting: 0, removed: 0, events: 0, rsvps: 0, warnings: [] as string[] };
     const now = Date.now();
 
     class DryRun extends Error {}
@@ -235,6 +235,86 @@ export default async function importRoutes(app: FastifyInstance): Promise<void> 
             tx.insert(eventRsvps).values({ eventId, guestId, status, peopleCount, updatedAt: now }).run();
           }
           summary.rsvps++;
+        }
+
+        // Nomes corrigidos pelos noivos (ex.: "Namorado dele" → nome de verdade), em titulares e acompanhantes
+        const fold = (s: string) =>
+          s
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+        const inRenames = Array.isArray(body.renames) ? (body.renames as Record<string, unknown>[]) : [];
+        for (const r of inRenames) {
+          const from = str(r.de, 60);
+          const to = str(r.para, 60);
+          if (!from || !to) continue;
+          for (const g of tx.select().from(guests).all()) {
+            if (fold(g.name) === fold(from)) {
+              tx.update(guests).set({ name: to }).where(eq(guests.id, g.id)).run();
+              summary.renamed++;
+            }
+            const list = g.companions ?? [];
+            if (list.some((n) => fold(n) === fold(from))) {
+              tx.update(guests)
+                .set({ companions: list.map((n) => (fold(n) === fold(from) ? to.slice(0, 40) : n)) })
+                .where(eq(guests.id, g.id))
+                .run();
+              summary.renamed++;
+            }
+          }
+        }
+
+        // CPFs coletados pelos noivos: preenche só o que estiver vazio, em qualquer conta (mesmo quem já entrou no app)
+        const inCpfs = Array.isArray(body.cpfs) ? (body.cpfs as Record<string, unknown>[]) : [];
+        if (inCpfs.length) {
+          const all = tx.select().from(guests).all();
+          for (const item of inCpfs) {
+            const name = str(item.name, 80);
+            const cpf = normalizeCpf(item.cpf);
+            if (!name) continue;
+            if (!cpf) {
+              summary.cpfsNotFound.push(`${name} (CPF inválido)`);
+              continue;
+            }
+            const key = fold(name);
+            // nome igual; se não achar, aceita quando um nome é o começo do outro e só existe um candidato
+            const candidates: { g: (typeof all)[number]; index: number }[] = [];
+            const loose: { g: (typeof all)[number]; index: number }[] = [];
+            for (const g of all) {
+              const names = [g.name, ...(g.companions ?? [])];
+              names.forEach((n, i) => {
+                const f = fold(n);
+                if (f === key) candidates.push({ g, index: i - 1 });
+                else if (f.length >= 8 && (key.startsWith(f + ' ') || f.startsWith(key + ' '))) loose.push({ g, index: i - 1 });
+              });
+            }
+            const hits = candidates.length ? candidates : loose.length === 1 ? loose : [];
+            if (hits.length === 0) {
+              summary.cpfsNotFound.push(name);
+              continue;
+            }
+            for (const { g, index } of hits) {
+              if (index < 0) {
+                if (!g.cpf) {
+                  tx.update(guests).set({ cpf }).where(eq(guests.id, g.id)).run();
+                  g.cpf = cpf;
+                  summary.cpfsFilled++;
+                } else if (g.cpf === cpf) summary.cpfsAlready++;
+                else summary.cpfsDifferent.push(name);
+              } else {
+                const list = (g.companions ?? []).map((_, i) => g.companionCpfs?.[i] ?? '');
+                if (!list[index]) {
+                  list[index] = cpf;
+                  tx.update(guests).set({ companionCpfs: list }).where(eq(guests.id, g.id)).run();
+                  g.companionCpfs = list;
+                  summary.cpfsFilled++;
+                } else if (list[index] === cpf) summary.cpfsAlready++;
+                else summary.cpfsDifferent.push(name);
+              }
+            }
+          }
         }
 
         if (dryRun) throw new DryRun();

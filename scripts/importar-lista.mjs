@@ -162,6 +162,7 @@ const EVENTS = [
   { id: 'prog-sabado-noite', title: 'Sábado à noite', date: '2026-11-21', description: `Encontro da galera no sábado à noite. ${TBD}` },
 ];
 function answersOf(p) {
+  if (p.presencas) return p.presencas;
   const out = { 'prog-cerimonia': 'yes' };
   const pagode = fold(p.pagode);
   if (pagode === 'sim') out['prog-pagode'] = 'yes';
@@ -262,6 +263,9 @@ for (const x of extras) {
     pagode: '',
     sabadoDia: '',
     sabadoNoite: '',
+    // "presencas": { "prog-pagode": "yes", "prog-cerimonia": "no" } troca a regra padrão (cerimônia = vai)
+    presencas: x.presencas ?? null,
+    extra: true,
   });
 }
 if (extras.length) console.log(`Pessoas extras (fora da planilha): ${extras.length}`);
@@ -320,7 +324,8 @@ for (const [invite, members] of byInvite) {
       arrival: h.arrival ?? companions.find((m) => m.arrival)?.arrival ?? null,
       departure: h.departure ?? companions.find((m) => m.departure)?.departure ?? null,
     };
-    if (members.some((m) => usedOverrides.has(fold(m.name))) && [h, ...h.group, ...members.filter((m) => m.separate)].some((m) => usedOverrides.has(fold(m.name)))) forceKeys.push(key);
+    if (h.group.some((m) => m.extra && m.name !== h.name)) forceKeys.push(key);
+    else if (members.some((m) => usedOverrides.has(fold(m.name))) && [h, ...h.group, ...members.filter((m) => m.separate)].some((m) => usedOverrides.has(fold(m.name)))) forceKeys.push(key);
     guests.push({
       key,
       name: h.name,
@@ -354,10 +359,33 @@ for (const name of overrides.keys()) if (!usedOverrides.has(name)) notes.push(`A
 if (usedOverrides.size) console.log(`Ajustes manuais aplicados: ${usedOverrides.size}`);
 if (notes.length) console.log('\nPontos de atenção:\n- ' + notes.join('\n- '));
 
+// ---------- CPFs coletados pelos noivos (data/cpfs-lista.csv, fora do git: colunas "Nome" e "CPF") ----------
+// Valem para qualquer pessoa da lista, inclusive quem já entrou no app, mas só preenchem CPF que estiver vazio.
+const cpfFile = path.resolve(import.meta.dirname, '../data/cpfs-lista.csv');
+const cpfs = [];
+if (fs.existsSync(cpfFile)) {
+  const lines = fs.readFileSync(cpfFile, 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean);
+  const head = lines[0].split(';').map(fold);
+  const iName = head.indexOf('nome');
+  const iCpf = head.indexOf('cpf');
+  const seen = new Set();
+  for (const line of lines.slice(1)) {
+    const cells = line.split(';');
+    const name = (cells[iName] ?? '').trim();
+    const digits = (cells[iCpf] ?? '').replace(/\D/g, '');
+    if (!name || digits.length !== 11 || seen.has(fold(name) + digits)) continue;
+    seen.add(fold(name) + digits);
+    cpfs.push({ name, cpf: digits });
+  }
+  console.log(`CPFs do arquivo dos noivos: ${cpfs.length}`);
+}
+// "_renomear": [{ "de": "Namorado dele", "para": "Fulano de Tal" }] troca o nome de um acompanhante (ou titular) já cadastrado
+const renames = Array.isArray(overridesRaw._renomear) ? overridesRaw._renomear : [];
+
 const res = await fetch(baseUrl.replace(/\/$/, '') + '/api/import', {
   method: 'POST',
   headers: { 'content-type': 'application/json', 'x-import-token': token },
-  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, forceKeys, dryRun: dry, reset }),
+  body: JSON.stringify({ ownerName: 'Pedro & Babi', guests, events: EVENTS, rsvps, forceKeys, cpfs, renames, dryRun: dry, reset }),
 });
 const out = await res.json().catch(() => ({}));
 console.log(`\n${dry ? 'SIMULAÇÃO' : 'IMPORTAÇÃO'} (${res.status}):`, JSON.stringify(out, null, 1));
